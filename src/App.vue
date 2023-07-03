@@ -1,6 +1,8 @@
 <script setup>
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
 import Menu from "./components/menu/menu.vue"
+import { addApp,data } from "./hooks";
+import { FUNCTION,DIR } from "./type";
 const item=ref("")
 function showMenu(i){
 	if(i){
@@ -9,29 +11,40 @@ function showMenu(i){
 		item.value=""
 	}
 }
-const data=[
+const menuData=[
 	{
-		title:"查看",
-	},
-	{
-		title:"排序",
-	},
-	{
-		title:"刷新",
+		title:"新建",
+		type:DIR,
+		children:[
+			{
+				title:"文本",
+				type:FUNCTION,
+				hander:()=>{
+					addApp("文本")
+				}
+			},
+			{
+				title:"目录",
+				type:FUNCTION,
+				hander:()=>{
+					addApp("文本")
+				}
+			}
+		],
 	}
 ]
 </script>
 
 <template>
-	<Menu :data="data"></Menu>
+	<Menu :data="menuData" :position="{x:100,y:200}"></Menu>
 	<div class="desktop" @contextmenu.prevent="showMenu(null)">
-		<div class="app" v-for="i in 50" tabindex="1"  @contextmenu.prevent.stop="showMenu(i)">
+		<div class="app" v-for="item in data" :key="item.title" tabindex="1"  @contextmenu.prevent.stop="showMenu(i)">
 			<div class="box">
-				<div class="icon">
-					<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 4H30L40 14V42C40 43.1046 39.1046 44 38 44H10C8.89543 44 8 43.1046 8 42V6C8 4.89543 8.89543 4 10 4Z" fill="none" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M18 18.0083H30" stroke="#333" stroke-width="4" stroke-linecap="round"/><path d="M24.0083 18.0083V34" stroke="#333" stroke-width="4" stroke-linecap="round"/></svg>
+				<div class="icon" v-html="item.icon">
+					
 				</div>
 				<div class="name">
-					桌面文件桌面文件桌面文件桌面文件桌面文件桌面文件桌面文件桌面文件
+					{{item.title}}
 				</div>
 			</div>
 		</div>
