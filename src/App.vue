@@ -4,7 +4,12 @@ import Menu from "./components/menu/menu.vue"
 import { addApp,data } from "./hooks";
 import { FUNCTION,DIR } from "./type";
 const item=ref("")
-function showMenu(i){
+const position=reactive({
+	x:0,y:0
+})
+function showMenu(e,i){
+	position.x=e.clientX
+	position.y=e.clientY
 	if(i){
 		item.value=i
 	}else{
@@ -29,6 +34,39 @@ const menuData=[
 				hander:()=>{
 					addApp("文本")
 				}
+			},
+			{
+				title:"更多",
+				type:DIR,
+				children:[
+					{
+						title:"文本",
+						type:DIR,
+						children:[
+							{
+								title:"文本",
+								type:FUNCTION,
+								hander:()=>{
+									addApp("文本")
+								}
+							},
+							{
+								title:"目录",
+								type:FUNCTION,
+								hander:()=>{
+									addApp("文本")
+								}
+							}
+						],
+					},
+					{
+						title:"目录",
+						type:FUNCTION,
+						hander:()=>{
+							addApp("文本")
+						}
+					}
+				],
 			}
 		],
 	}
@@ -36,9 +74,9 @@ const menuData=[
 </script>
 
 <template>
-	<Menu :data="menuData" :position="{x:100,y:200}"></Menu>
-	<div class="desktop" @contextmenu.prevent="showMenu(null)">
-		<div class="app" v-for="item in data" :key="item.title" tabindex="1"  @contextmenu.prevent.stop="showMenu(i)">
+	<div class="desktop" @contextmenu.prevent="showMenu($event,null)">
+		<Menu :data="menuData" :position="position"></Menu>
+		<div class="app" v-for="item in data" :key="item.title" tabindex="1"  @contextmenu.prevent.stop="showMenu($event,i)">
 			<div class="box">
 				<div class="icon" v-html="item.icon">
 					
@@ -54,6 +92,9 @@ const menuData=[
 body{
 	background-image: url(/bg.png);
 	background-repeat: no-repeat;
+	overflow: hidden;
+	margin: 0;
+	height: 100vh;
 }
 </style>
 <style scoped>
