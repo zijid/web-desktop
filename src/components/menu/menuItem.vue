@@ -1,6 +1,6 @@
 <script setup>
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
-import { FUNCTION,DIR } from "../../type";
+import { FUNCTION,DIR } from "./type";
 import Menu from "./menu.vue";
 const props=defineProps({
 	title:{
@@ -59,27 +59,24 @@ const style=computed(()=>{
 	}
 	const viewInElWidth=width-elWidth
 	const viewInElHeight=height-elHeight
+	let top=""
 	if(width>elWidth){
-		console.log("viewInElWidth:",viewInElWidth);
-		console.log("x:",x);
 		if(x<viewInElWidth){//位置小于屏幕宽度-元素宽度
 			result.x=x
 		}else{
 			result.x=viewInElWidth-w
-			console.log("viewInElWidth-w:",viewInElWidth-w);
-			console.log("w:",w);
 		}
 		if(y<viewInElHeight){//位置小于屏幕宽度-元素宽度
 			result.y=y
+			top=`calc( ${props.index} * 1.4em + ${result.y}px)`
 		}else{
 			result.y=height-elHeight
+			top=`${result.y}px`
 		}
 	}else{
 		return {left:0+'px',top:0+'px',x:0,y:0}
 	}
 	return {
-		left:result.x+"px",
-		top:`calc( ${props.index}*1em + ${result.y}px) - 1em`,
 		x:result.x,
 		y:result.y,
 		w:width-result.x,
@@ -89,10 +86,11 @@ const style=computed(()=>{
 	}
 	//calc(2*1.4em + 310px + 1em)
 })
+
 </script>
 
 <template>
-<div class="menuItem" @click="click">
+<div class="menuItem" @click.stop="click">
 	{{title}}
 	<div class="icon" v-if="type===DIR" >
 		<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 12L31 24L19 36" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -121,4 +119,16 @@ const style=computed(()=>{
 	height: 1em;
 	line-height: 1em;
 }
+</style>
+<style>
+
+.menuItem:hover+.menu{
+	opacity: 1;
+	pointer-events: all;
+}
+.menuItem+.menu{
+	opacity: 0;
+	pointer-events: none;
+}
+
 </style>
