@@ -3,6 +3,7 @@ import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
 import Menu from "./components/menu/menu.vue"
 import { addApp,data } from "./hooks";
 import { FUNCTION,DIR } from "./components/menu/type";
+import "./App.js"//初始化一些东西
 const item=ref("")
 const position=reactive({
 	x:-1000,y:-1000

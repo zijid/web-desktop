@@ -1,7 +1,37 @@
-# Vue 3 + Vite
+# 桌面
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## 模拟文件系统
 
-## Recommended IDE Setup
+### C://系统
+	用户
+		桌面
+		文档
+	临时文件
+	系统文件//系统配置、系统加载内容
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+
+### D://软件
+	空//安装东西可以都放这里
+
+
+### E://数据
+
+	空//文件可以存这里
+
+## 文件
+
+### 快捷方式  
+	可以指向文件系统内的文件 创建时可以选择或者输入 如果内容不存在不可以创建 创建后打开 内容不存在改变图标并显示删除提示
+
+### 文件  
+	有后缀，右键显示不同的菜单，后缀可以隐藏，文件类型txt、exe等
+
+电脑  
+	打开文件系统
+
+### 系统管理
+	打开可视化配置
+
+
+## 文件信息保存到浏览器
+
