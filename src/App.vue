@@ -1,9 +1,12 @@
 <script setup>
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
 import Menu from "./components/menu/menu.vue"
-import { addApp,data } from "./hooks";
+import { addApp,data ,openAppList} from "./hooks";
+import { openApp } from "./utils";
 import { FUNCTION,DIR } from "./components/menu/type";
 import "./App.js"//初始化一些东西
+import Explorer from "./components/explorer/explorer.vue";
+import Notepad from "./components/notepad/notepad.vue";
 const item=ref("")
 const position=reactive({
 	x:-1000,y:-1000
@@ -25,7 +28,7 @@ show.value=true
 }, 1000);
 const menuData=[
 	{
-		title:"文本a",
+		title:"文本",
 		type:FUNCTION,
 		hander:()=>{
 			addApp(FUNCTION,"文本")
@@ -33,10 +36,11 @@ const menuData=[
 		}
 	},
 	{
-		title:"文本b",
+		title:"文件夹",
 		type:FUNCTION,
 		hander:()=>{
 			addApp(DIR,"文件夹")
+			show.value=false
 		}
 	},
 	{
@@ -93,11 +97,26 @@ const menuData=[
 		],
 	}
 ]
+const app=ref([])
+const activeAppIndex=ref(0)
+
+nextTick(()=>{
+	activeAppIndex.value=openAppList.length-1
+})
+
+function showApp(index){
+	app.value[index].$el.focus()
+	activeAppIndex.value=index
+}
 </script>
 
 <template>
 	<div class="desktop" @click="show=false" @contextmenu.prevent="showMenu($event,null)">
 		<Menu :data="menuData" :position="position" :show="show"></Menu>
+		<!-- <div v-for="app in openAppList" :key="app.path">
+			<Explorer v-if="app.exec===0" :path="app.path"></Explorer>
+			<Notepad v-else :path="app.path"></Notepad>
+		</div> -->
 		<div class="app" v-for="item in data" :key="item.title" tabindex="1"  @contextmenu.prevent.stop="showMenu($event,i)">
 			<div class="box">
 				<div class="icon" v-html="item.icon">
@@ -107,6 +126,17 @@ const menuData=[
 					{{item.title}}
 				</div>
 			</div>
+		</div>
+		<div class="tab">
+			<template v-for="(app,index) in openAppList" :key="app.path">
+				<!-- <div class="app_box" :style="{zIndex:5}"> -->
+					<Explorer v-if="app.exec===0" :path="app.path" :pid="app.pid" ref="app"></Explorer>
+					<Notepad v-else :path="app.path" :pid="app.pid" ref="app"></Notepad>
+				<!-- </div> -->
+				<div class="app_item" :class="{active_app:activeAppIndex===index}" @click="showApp(index)">
+					{{ app.exec }}
+				</div>
+			</template>
 		</div>
 	</div>
 </template>
@@ -130,6 +160,39 @@ body{
 	overflow: hidden;
 	--size:12px;
 	--line-height:14px;
+	--tab-height:40px;
+	padding-bottom: var(--tab-height);
+}
+.tab{
+	width: 100%;
+	height:var(--tab-height);
+	background-color: #0000007a;
+	position: fixed;
+	bottom: 0;
+	display: flex;
+	flex-direction: row;
+	z-index: 9;
+}
+.app_box{
+	position: fixed;
+}
+.app_item{
+	padding:0 1em;
+	line-height:var(--tab-height);
+	box-sizing: border-box;
+	color: #fff;
+	border-bottom: 2px inset #ffbb29;
+	cursor: default;
+	user-select: none;
+}
+.app_item:hover{
+	background-color: rgba(240, 240, 240, 0.2);
+}
+.app_item:active{
+	background-color: rgba(240, 240, 240, 0.4);
+}
+.active_app{
+	background-color: rgba(240, 240, 240, 0.5);
 }
 .app{
 	width: 80px;

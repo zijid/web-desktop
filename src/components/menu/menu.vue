@@ -63,7 +63,6 @@ const style=computed(()=>{
 		}else{
 			result.x=viewInElWidth+w
 		}
-		console.log("y,viewInElHeight:",y,viewInElHeight);
 		if(y<viewInElHeight){//位置小于屏幕宽度-元素宽度
 			result.y=y
 			top=`calc( ${props.index} * 1.4em + ${result.y-20}px + 1em )`
@@ -80,14 +79,14 @@ const style=computed(()=>{
 		x:result.x+elWidth,y:result.y+props.index*14*1.4,w:width-result.x,h:height-result.y,parentX:0,parentY:0,vw:width,vh:height
 	}
 })
-watch(()=>props.show,()=>{
-	console.log("1:",1);
-})
+// watch(()=>props.show,()=>{
+// 	console.log("1:",1);
+// })
 </script>
 
 <template>
 
-<div class="menu" :style="{left:style.left,top:style.top}" ref="menu" :class="{show:!show}">
+<div class="menu" @contextmenu.stop.prevent :style="{left:style.left,top:style.top}" ref="menu" :class="{show:!show}">
 	<menuItem :index="index" :position="style" v-for="(item,index) in data" :key="item.title" :title="item.title" :type="item.type" :children="item.children" :click="handerFun(item.type,item.hander)"></menuItem>
 </div>
 </template>
@@ -107,7 +106,7 @@ watch(()=>props.show,()=>{
     color: #000;
     background-color: rgb(239 239 239);
     text-shadow: 0 0 1px #c7c7c7;
-	z-index: 2;
+	z-index: 10;
 }
 .menu:hover{
 	/* display: block; */

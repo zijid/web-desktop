@@ -15,3 +15,4 @@ export function addApp(type,title){
 addApp(FUNCTION,"1")
 addApp(FUNCTION,"2")
 addApp(FUNCTION,"3")
+export const openAppList=reactive([])
