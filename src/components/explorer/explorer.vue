@@ -2,63 +2,35 @@
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
 import {systemDirectory} from "../../App"
 import { findFile } from "../../utils";
+import Win from "../window/window.vue";
+
 const props=defineProps({
-	path:{
+	// path:{
+	// 	type:String,
+	// 	default:""
+	// },
+	// pid:{
+	// 	type:Number,
+	// 	default:0
+	// }
+	args:{
 		type:String,
 		default:""
 	},
-	pid:{
-		type:Number,
-		default:0
-	}
 })
+const args=computed(()=>{
+	return props.args.split(" ")
+})//path （开始路径） 
 const emits=defineEmits([])
-let isDown=false
-const explorer=ref(null)
-const explorerMove=ref(null)
-let offset = { x: 0, y: 0 };
-const position=reactive({
-	x:0,
-	y:0
-})
-nextTick(()=>{
-	console.log("props.pid:",props.pid);
-	position.x=window.innerWidth/2-explorer.value.offsetWidth/2+props.pid*50
-	position.y=window.innerHeight/2-explorer.value.offsetHeight/2+props.pid*50
-})
-document.addEventListener('mousedown', handleMouseDown);
-document.addEventListener('mousemove', handleMouseMove);
-document.addEventListener('mouseup', handleMouseUp);
 
-function handleMouseDown(e) {
-	if (e.target === explorerMove.value) {
-		isDown=true
-		const rect = explorerMove.value.getBoundingClientRect();
-		offset.x = e.clientX - rect.left;
-		offset.y = e.clientY - rect.top;
-	}
-}
-
-function handleMouseMove(e) {
-    if(isDown){
-		const x = e.clientX - offset.x;
-		const y = e.clientY - offset.y;
-		position.x = x
-		position.y = y
-	}
-}
-
-function handleMouseUp() {
-	isDown=false
-}
 const search=ref("")
 
 const searchKeyword=ref("")
 
 const tempPath=ref("")
 const history=[]
+const explorer=ref(null)
 const dir=computed(()=>{
-	console.log("tempPath.value:",tempPath.value);
 	if(!tempPath.value){
 		return systemDirectory
 	}else{
@@ -79,7 +51,6 @@ watchEffect(()=>{
 	history.push(tempPath.value=props.path)
 })
 function open(file){
-	console.log("open:file:",file);
 	if(file.isFolder){
 		history.splice(index.value+1,history.length)
 		history.push(file.path)
@@ -90,13 +61,10 @@ function open(file){
 	}
 }
 function move(i){
-	console.log("history:",history);
 	index.value+=i
 	tempPath.value=history[index.value]
-	console.log("index.value:",index.value);
-	explorer.value.focus()
+	// explorer.value.focus()
 }
-
 function skip(){
 	const file=findFile(systemDirectory,search.value)
 	if(tempPath.value===search.value){
@@ -125,7 +93,47 @@ function skip(){
 </script>
 
 <template>
-<div :tabindex="pid" class="explorer" ref="explorer" :style="{left:position.x+'px',top:position.y+'px'}">
+<Win :path="args[0]">
+	<template v-slot:title>
+		文件管理器<span class="path" v-text="tempPath"></span>
+	</template>
+	<div class="explorer">
+		<div class="function">
+			<div class="history">
+				<button class="after" @click="move(-1)" :disabled="index==0">
+					←
+				</button>
+				<button class="before" @click="move(1)" :disabled="index===history.length-1">
+					→
+				</button>
+			</div>
+			<input type="text" class="search" v-model="search" @keydown.enter="skip">
+			<div class="skip" @click="skip">
+				→
+			</div>
+			<input type="text" class="searchKeyword" v-model="searchKeyword" placeholder="搜索">
+		</div>
+		<div class="body">
+			<div v-for="file in dir" @click="open(file)" :key="file.name">
+				<template v-if="file.isRoot">
+					<div class="root_dir" v-if="file.isFolder">
+						<div class="root_dir_name">{{file.name}}{{ file.pwd }}
+						</div>
+					</div>
+				</template>
+				<div class="dir_file" v-else-if="file.isFolder">
+					<div class="name">{{file.name}}
+					</div>
+				</div>
+				<div class="dir_file" v-else>
+					<div class="name">{{file.name}}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</Win>
+<!-- <div :tabindex="pid" class="explorer" ref="explorer" :style="{left:position.x+'px',top:position.y+'px'}">
 	<div class="header" ref="explorerMove">文件管理器<span class="path" v-text="tempPath"></span>
 		<div class="handle">
 			<div class="min">━</div>
@@ -166,7 +174,7 @@ function skip(){
 			</div>
 		</div>
 	</div>
-</div>
+</div> -->
 </template>
 
 <style scoped>
@@ -174,15 +182,8 @@ function skip(){
 	z-index: 8;
 }
 .explorer{
-	position: fixed;
 	background-color: rgb(255, 255, 255);
 	z-index: 2;
-	outline: 1px solid #949494;
-    box-shadow: 1px 1px 20px 0px #0a0a0a;
-	top: 50%;
-	left: 50%;
-	width: 50%;
-	height: 50%;
 	font-size: 12px;
 	display: flex;
 	flex-direction: column;
