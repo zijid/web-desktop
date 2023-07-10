@@ -1,7 +1,7 @@
 <script setup>
-import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
-import {systemDirectory} from "../../App"
-import Win from "../window/window.vue";
+import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick,provide,inject} from "vue";
+import {getApp} from "../../utils/index"
+import { showWindow,windowList,createWindow} from "../../hooks/system";
 const props=defineProps({
 	path:{
 		type:String,
@@ -12,36 +12,76 @@ const props=defineProps({
 		default:0
 	}
 })
-const file=ref({})
 const emits=defineEmits([])
+// let isDown=false
+const win=ref(null)
+const winMove=ref(null)
+// let offset = { x: 0, y: 0 };
+const position=reactive({
+	x:0,
+	y:0
+})
+const winInfo=createWindow(props.pid)
+onMounted(()=>{
+	const winEl=win.value
+	if(winEl){
+		position.x=window.innerWidth/2-winEl.offsetWidth/2+winInfo.z*50
+		position.y=window.innerHeight/2-winEl.offsetHeight/2+winInfo.z*50
+	}
+})
+function activeApp(){
+	showWindow(winInfo.pid)
+}
+// document.addEventListener('mousedown', handleMouseDown);
+// document.addEventListener('mousemove', handleMouseMove);
+// document.addEventListener('mouseup', handleMouseUp);
 
+// function handleMouseDown(e) {
+// 	if (e.target === winMove.value) {
+// 		isDown=true
+// 		const rect = winMove.value.getBoundingClientRect();
+// 		offset.x = e.clientX - rect.left;
+// 		offset.y = e.clientY - rect.top;
+// 	}
+// }
+
+// function handleMouseMove(e) {
+
+//     if(isDown){
+// 		const x = e.clientX - offset.x;
+// 		const y = e.clientY - offset.y;
+// 		position.x = x
+// 		position.y = y
+// 	}
+// }
+// function handleMouseUp() {
+// 	isDown=false
+// }
 </script>
 
 <template>
-<Win :path="path" :pid="pid">
-	<template v-slot:title>
-		记事本
-	</template>
-	<div class="function">
-	</div>
-	<div class="body" v-text="file.content"></div>
-</Win>
-<!-- <div :tabindex="pid"  class="notepad" ref="notepad" :style="{left:position.x+'px',top:position.y+'px'}">
-	<div class="header" ref="notepadMove">
+<div :tabindex="winInfo.pid" class="win" ref="win" :style="{left:position.x+'px',top:position.y+'px',zIndex:winInfo.z}" @focus="activeApp">
+	<div class="header" ref="winMove" v-move="position">
+		<div style="pointer-events: none;">
+			<slot name="title"></slot>
+		</div>
 		<div class="handle">
 			<div class="min">━</div>
 			<div class="max">⬜</div>
 			<div class="close">✖</div>
 		</div>
 	</div>
-	<div class="function">
+	<div class="content">
+		<slot :win="{path}"></slot>
 	</div>
-	<div class="body" v-text="file.content"></div>
-</div> -->
+</div>
 </template>
 
 <style scoped>
-.notepad{
+.win:focus-within{
+	z-index: 8;
+}
+.win{
 	position: fixed;
 	background-color: rgb(255, 255, 255);
 	z-index: 2;
@@ -54,6 +94,7 @@ const emits=defineEmits([])
 	font-size: 12px;
 	display: flex;
 	flex-direction: column;
+	user-select: none;
 }
 .header{
 	cursor: move;
@@ -106,7 +147,7 @@ const emits=defineEmits([])
 	color: #ababab;
 	margin-left: 1em;
 }
-.body{
+.content{
 	flex-grow: 1;
 	background-color: rgb(255, 255, 255);
 	display: flex;
@@ -114,10 +155,6 @@ const emits=defineEmits([])
 	flex-wrap: wrap;
 	align-content: flex-start;
 	overflow: auto;
-}
-.body>*{
-	border: 1px solid #000;
-    padding: 1em;
 }
 .root_dir{
 	width: 10em;

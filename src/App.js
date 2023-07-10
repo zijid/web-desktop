@@ -1,5 +1,8 @@
 import { File } from "./utils";
 import { openApp } from "./utils";
+import {createProgress,progressList} from "./hooks/system"
+import Explorer from "./components/explorer/explorer.vue";
+import Notepad from "./components/notepad/notepad.vue";
 const systemDirectory=[
 	new File("","C:",true,[
 		new File("C:","用户",true,[
@@ -25,7 +28,14 @@ openApp(0,"E:")
 openApp(0,"E:")
 openApp(0,"E:/文件夹1")
 openApp(1,"")
+const exec={
+	explorer:Explorer,
+	notepad:Notepad,
+}
+createProgress(exec["explorer"],"a b ccc")
+createProgress(exec["explorer"],"a b ccc")
+createProgress(exec["explorer"],"a b ccc")
+createProgress(exec["explorer"],"a b ccc")
 export {
 	systemDirectory
 }
-console.log("systemDirectory:",JSON.parse(JSON.stringify(systemDirectory)));//以后可以保存到本地，只在本地没有时在创建

@@ -78,7 +78,12 @@ export {
 let pid=0
 export function openApp(exec,path){
 	openAppList.push({exec,path,pid:++pid})
-	console.log("pid:",openAppList);
+}
+// setTimeout(() => {
+// 	openAppList.pop()
+// }, 1000);
+export function getApp(path){
+	return openAppList.find(i=>i.path===path)
 }
 const tempCache={}
 export function findFile(systemDirectory,path){
@@ -104,6 +109,5 @@ export function findFile(systemDirectory,path){
 
 	}
 	findArr(systemDirectory)
-	console.log("tempCache:",tempCache);
 	return result
 }

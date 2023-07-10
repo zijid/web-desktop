@@ -5,8 +5,10 @@ import { addApp,data ,openAppList} from "./hooks";
 import { openApp } from "./utils";
 import { FUNCTION,DIR } from "./components/menu/type";
 import "./App.js"//初始化一些东西
+import {createProgress,progressList} from "./hooks/system"
 import Explorer from "./components/explorer/explorer.vue";
 import Notepad from "./components/notepad/notepad.vue";
+import Win from "./components/window/window.vue";
 const item=ref("")
 const position=reactive({
 	x:-1000,y:-1000
@@ -105,6 +107,7 @@ nextTick(()=>{
 })
 
 function showApp(index){
+	console.log("app.value[index].$el:",app.value[index].$el);
 	app.value[index].$el.focus()
 	activeAppIndex.value=index
 }
@@ -128,15 +131,21 @@ function showApp(index){
 			</div>
 		</div>
 		<div class="tab">
-			<template v-for="(app,index) in openAppList" :key="app.path">
-				<!-- <div class="app_box" :style="{zIndex:5}"> -->
+			<!-- <template v-for="(app,index) in openAppList" :key="app.path">
 					<Explorer v-if="app.exec===0" :path="app.path" :pid="app.pid" ref="app"></Explorer>
 					<Notepad v-else :path="app.path" :pid="app.pid" ref="app"></Notepad>
-				<!-- </div> -->
+					<div class="app_item" :class="{active_app:activeAppIndex===index}" @click="showApp(index)">
+					{{ app.exec }}
+				</div>
+			</template> -->
+			<template v-for="(progress,index) in progressList" :key="progress.pid">
+				<component :is="progress.exec" :pid="progress.pid" :args="progress.args" ref="app"></component>
 				<div class="app_item" :class="{active_app:activeAppIndex===index}" @click="showApp(index)">
 					{{ app.exec }}
 				</div>
 			</template>
+
+			
 		</div>
 	</div>
 </template>
