@@ -29,13 +29,19 @@ openApp(0,"E:")
 openApp(0,"E:/文件夹1")
 openApp(1,"")
 const exec={
-	explorer:Explorer,
-	notepad:Notepad,
+	explorer:{
+		app:Explorer,
+		title:"文件管理器"
+	},
+	notepad:{
+		app:Notepad,
+		title:"记事本"
+	},
 }
-createProgress(exec["explorer"],"a b ccc")
-createProgress(exec["explorer"],"a b ccc")
-createProgress(exec["explorer"],"a b ccc")
-createProgress(exec["explorer"],"a b ccc")
+createProgress(exec["explorer"].title,exec["explorer"].app,"a b ccc")
+createProgress(exec["explorer"].title,exec["explorer"].app,"a b ccc")
+createProgress(exec["explorer"].title,exec["explorer"].app,"a b ccc")
+createProgress(exec["explorer"].title,exec["explorer"].app,"a b ccc")
 export {
 	systemDirectory
 }

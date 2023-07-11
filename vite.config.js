@@ -7,6 +7,7 @@ export default defineConfig({
 		host: "0.0.0.0",
 	},
 	plugins: [vue()],
+	base: './',
 	build: {
 		outDir: 'docs'
 	}

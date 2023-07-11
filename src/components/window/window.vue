@@ -1,7 +1,7 @@
 <script setup>
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick,provide,inject} from "vue";
 import {getApp} from "../../utils/index"
-import { showWindow,windowList,createWindow} from "../../hooks/system";
+import { showWindow,windowList,createWindow,hideWindow} from "../../hooks/system";
 const props=defineProps({
 	path:{
 		type:String,
@@ -60,13 +60,13 @@ function activeApp(){
 </script>
 
 <template>
-<div :tabindex="winInfo.pid" class="win" ref="win" :style="{left:position.x+'px',top:position.y+'px',zIndex:winInfo.z}" @focus="activeApp">
+<div :tabindex="winInfo.pid" class="win" ref="win" v-show="winInfo.z>-1" :style="{left:position.x+'px',top:position.y+'px',zIndex:winInfo.z}" @click="activeApp">
 	<div class="header" ref="winMove" v-move="position">
 		<div style="pointer-events: none;">
 			<slot name="title"></slot>
 		</div>
 		<div class="handle">
-			<div class="min">━</div>
+			<div class="min" @focus.stop @click.stop="hideWindow(winInfo.pid)">━</div>
 			<div class="max">⬜</div>
 			<div class="close">✖</div>
 		</div>
@@ -86,7 +86,7 @@ function activeApp(){
 	background-color: rgb(255, 255, 255);
 	z-index: 2;
 	outline: 1px solid #949494;
-    box-shadow: 1px 1px 20px 0px #0a0a0a;
+	box-shadow: 1px 1px 6px 0px #0a0a0a57;
 	top: 50%;
 	left: 50%;
 	width: 50%;

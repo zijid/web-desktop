@@ -5,7 +5,7 @@ import { addApp,data ,openAppList} from "./hooks";
 import { openApp } from "./utils";
 import { FUNCTION,DIR } from "./components/menu/type";
 import "./App.js"//初始化一些东西
-import {createProgress,progressList} from "./hooks/system"
+import {createProgress,progressList,showWindow,activeAppPid,hideToShowWindow,windowList} from "./hooks/system"
 import Explorer from "./components/explorer/explorer.vue";
 import Notepad from "./components/notepad/notepad.vue";
 import Win from "./components/window/window.vue";
@@ -106,10 +106,14 @@ nextTick(()=>{
 	activeAppIndex.value=openAppList.length-1
 })
 
-function showApp(index){
-	console.log("app.value[index].$el:",app.value[index].$el);
-	app.value[index].$el.focus()
-	activeAppIndex.value=index
+function showApp(pid,index){
+	// console.log("app.value[index].$el:",app.value[index].$el);
+	// app.value[index].$el.focus()
+	if(windowList.find(i=>i.pid===pid).z>-1){
+		showWindow(pid)
+	}else{
+		hideToShowWindow(pid)
+	}
 }
 </script>
 
@@ -140,8 +144,8 @@ function showApp(index){
 			</template> -->
 			<template v-for="(progress,index) in progressList" :key="progress.pid">
 				<component :is="progress.exec" :pid="progress.pid" :args="progress.args" ref="app"></component>
-				<div class="app_item" :class="{active_app:activeAppIndex===index}" @click="showApp(index)">
-					{{ app.exec }}
+				<div class="app_item" :class="{active_app:activeAppPid===progress.pid}" @click="showApp(progress.pid,index)">
+					{{ progress.title }}
 				</div>
 			</template>
 
