@@ -110,7 +110,7 @@ function showApp(pid,index){
 	// console.log("app.value[index].$el:",app.value[index].$el);
 	// app.value[index].$el.focus()
 	if(windowList.find(i=>i.pid===pid).z>-1){
-		showWindow(pid)
+		showWindow(pid,"tab")
 	}else{
 		hideToShowWindow(pid)
 	}

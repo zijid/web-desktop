@@ -1,7 +1,7 @@
 <script setup>
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick,provide,inject} from "vue";
 import {getApp} from "../../utils/index"
-import { showWindow,windowList,createWindow,hideWindow} from "../../hooks/system";
+import { showWindow,closeWindow,createWindow,hideWindow} from "../../hooks/system";
 const props=defineProps({
 	path:{
 		type:String,
@@ -30,7 +30,7 @@ onMounted(()=>{
 	}
 })
 function activeApp(){
-	showWindow(winInfo.pid)
+	showWindow(winInfo.pid,"window")
 }
 // document.addEventListener('mousedown', handleMouseDown);
 // document.addEventListener('mousemove', handleMouseMove);
@@ -57,18 +57,24 @@ function activeApp(){
 // function handleMouseUp() {
 // 	isDown=false
 // }
+function max(pid){
+
+}
+function close(pid){
+
+}
 </script>
 
 <template>
-<div :tabindex="winInfo.pid" class="win" ref="win" v-show="winInfo.z>-1" :style="{left:position.x+'px',top:position.y+'px',zIndex:winInfo.z}" @click="activeApp">
+<div :tabindex="winInfo.pid" class="win" ref="win" v-show="winInfo.z>-1" :style="{left:position.x+'px',top:position.y+'px',zIndex:winInfo.z}" @mousedown="activeApp">
 	<div class="header" ref="winMove" v-move="position">
 		<div style="pointer-events: none;">
 			<slot name="title"></slot>
 		</div>
 		<div class="handle">
 			<div class="min" @focus.stop @click.stop="hideWindow(winInfo.pid)">━</div>
-			<div class="max">⬜</div>
-			<div class="close">✖</div>
+			<div class="max" @click.stop="max(winInfo.pid)">⬜</div>
+			<div class="close" @mousedown.stop @click.stop="closeWindow(winInfo.pid)">✖</div>
 		</div>
 	</div>
 	<div class="content">

@@ -41,9 +41,36 @@ export function createWindow(pid){//名字，pid，运行程序
 	})-1]
 }
 export function closeWindow(pid){//名字，pid，运行程序
-	const index=windowList.findIndex(i=>i.pid===pid)
+	let index=progressList.findIndex(i=>i.pid===pid)
 	if(!isNaN(index)){
+		progressList.splice(index,1)
+	}
+	console.log("windowList,pid:",windowList,pid);
+	index=windowList.findIndex(i=>i.pid===pid)
+	if(!isNaN(index)){
+		console.log("index:",index);
+		let obj=windowList[index]
+		const len=windowList.length-1-hideCount
+		windowList.sort((a, b) => a.z - b.z);
+		console.log("obj:",obj);
+		for(let i=obj.z+1;i<=len;i++){
+			console.log("i:",i);
+			windowList[i+hideCount].z--
+		}
 		windowList.splice(index,1)
+	}
+	actionUpdate()
+}
+function actionUpdate(){
+	console.log("windowList.lengtg:",windowList.length);
+	const max = windowList.reduce((prev, current) => {
+		console.log("prev, current:",prev, current);
+		return current.z > prev.z ? current : prev;
+	},{pid:null,z:-1});
+	if(max&&max.z>-1){
+		activeAppPid.value=max.pid
+	}else{
+		activeAppPid.value=null
 	}
 }
 export function getWindow(pid){//名字，pid，运行程序
@@ -53,9 +80,13 @@ setInterval(() => {
 	console.log("windowList:",windowList);
 }, 1000);
 let hideCount=0
-export function showWindow(pid){
+export function showWindow(pid,type){
 	const len=windowList.length-1-hideCount
 	const thisWin=getWindow(pid)
+	if(type==="tab"&&thisWin.z===windowList.length-1-hideCount){
+		hideWindow(pid)
+		return
+	}
 	// if(thisWin.z<0){
 	// 	thisWin.z=len+1
 	// 	hideCount++
@@ -65,45 +96,48 @@ export function showWindow(pid){
 	// 	return 
 	// }
 	// console.log("thisWin.z,len:",thisWin.z,len);
-	console.log("hideCount:",hideCount);
-	console.log("len:",len);
-	console.log("thisWin.z:",thisWin.z);
 	// if(thisWin.z===len){
 	// 	thisWin.z=-thisWin.z
 	// 	hideCount++
 	// 	return
 	// }
 	windowList.sort((a, b) => a.z - b.z);
-	for(let i=thisWin.z;i<=len;i++){
-		windowList[i].z--
+	for(let i=thisWin.z+1;i<=len;i++){
+		windowList[i+hideCount].z--
 	}
 	thisWin.z=len
 	activeAppPid.value=thisWin.pid
 }
 
 export function hideWindow(pid){
-	const len=windowList.length-1-hideCount
+	console.log("隐藏");
 	const thisWin=getWindow(pid)
 	// hideCount=windowList.reduce((prev, current) => {
 	// 	return current.z <0 ? prev+1 : 0;
 	// },0);
+	if(thisWin.z<0){
+		return 
+	}
 	hideCount++
-	for(let i=thisWin.z;i<len;i++){
-		windowList[i].z--
+	const len=windowList.length-1-hideCount
+	windowList.sort((a, b) => a.z - b.z);
+	for(let i=thisWin.z;i<=len;i++){
+		console.log("i:",i);
+		windowList[i+hideCount].z--
 	}
 	thisWin.z=-thisWin.z
-	const max = windowList.reduce((prev, current) => {
-		return current.z > prev.z ? current : prev;
-	});
-	activeAppPid.value=max.pid
+	if(!thisWin.z){
+		thisWin.z=-1
+	}
+	actionUpdate()
 }
 export function hideToShowWindow(pid){
 	const thisWin=getWindow(pid)
-	hideCount=windowList.reduce((prev, current) => {
-		return current.z <0 ? prev+1 : 0;
-	},0);
+	// hideCount=windowList.reduce((prev, current) => {
+	// 	return current.z <0 ? prev+1 : 0;
+	// },0);
+	hideCount--
 	let len=windowList.length-1-hideCount
-	console.log("len:",len);
 	if(len<0){
 		len=0
 	}
