@@ -2,13 +2,13 @@
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
 import Menu from "./components/menu/menu.vue"
 import { addApp,data ,openAppList} from "./hooks";
-import { openApp } from "./utils";
+import {createProgress,progressList,showWindow,activeAppPid,hideToShowWindow,windowList,showDesktop} from "./hooks/system"
 import { FUNCTION,DIR } from "./components/menu/type";
 import "./App.js"//初始化一些东西
-import {createProgress,progressList,showWindow,activeAppPid,hideToShowWindow,windowList,showDesktop} from "./hooks/system"
-import Explorer from "./components/explorer/explorer.vue";
-import Notepad from "./components/notepad/notepad.vue";
-import Win from "./components/window/window.vue";
+// import Explorer from "./components/explorer/explorer.vue";
+// import Notepad from "./components/notepad/notepad.vue";
+// import Win from "./components/window/window.vue";
+
 const item=ref("")
 const position=reactive({
 	x:-1000,y:-1000
@@ -109,6 +109,7 @@ nextTick(()=>{
 function showApp(pid,index){
 	// console.log("app.value[index].$el:",app.value[index].$el);
 	// app.value[index].$el.focus()
+	console.log("pid:",pid);
 	if(windowList.find(i=>i.pid===pid).z>-1){
 		showWindow(pid,"tab")
 	}else{
@@ -125,10 +126,8 @@ function showApp(pid,index){
 			<Notepad v-else :path="app.path"></Notepad>
 		</div> -->
 		<div class="app" v-for="item in data" :key="item.title" tabindex="1"  @contextmenu.prevent.stop="showMenu($event,i)">
-			<div class="box">
-				<div class="icon" v-html="item.icon">
-					
-				</div>
+			<div class="box" @dblclick="createProgress(item.title,item.exec,item.pwd,item.targetPath,item.args)">
+				<div class="icon" v-html="item.icon"></div>
 				<div class="name">
 					{{item.title}}
 				</div>
@@ -143,7 +142,8 @@ function showApp(pid,index){
 				</div>
 			</template> -->
 			<template v-for="(progress,index) in progressList" :key="progress.pid">
-				<component :is="progress.exec" :pid="progress.pid" :args="progress.args" ref="app"></component>
+				{{ progress }}
+				<component :is="progress.exec" v-bind="progress" ref="app"></component>
 				<div class="app_item" :class="{active_app:activeAppPid===progress.pid}" @click="showApp(progress.pid,index)">
 					{{ progress.title }}
 				</div>
@@ -208,15 +208,21 @@ body{
 	border-bottom: 2px inset #ffbb29;
 	cursor: default;
 	user-select: none;
+	margin:0 10px;
+	transition: padding 0.1s, margin 0.1s;
 }
 .app_item:hover{
 	background-color: rgba(240, 240, 240, 0.2);
+	margin:0;
+	padding:0 calc( 1em + 10px );
 }
 .app_item:active{
 	background-color: rgba(240, 240, 240, 0.4);
 }
 .active_app{
 	background-color: rgba(240, 240, 240, 0.5);
+	margin:0;
+	padding:0 calc( 1em + 10px );
 }
 .app{
 	width: 80px;
@@ -236,13 +242,15 @@ body{
 	width: 60px;
 	height: 60px;
 	margin: 0 auto;
-	background-color: red;
+	display: flex;
+    align-items: center;
+    justify-content: center;
+	filter: drop-shadow(1px 1px 1px #fff);
 }
 .name{
 	width: 100%;
 	height: calc(var(--line-height) * 2);
 	line-height: var(--line-height);
-	
 	text-align: center;
 	font-size: var(--size);
 	overflow: hidden;
@@ -250,10 +258,9 @@ body{
 	-webkit-line-clamp: 2; 
 	display: -webkit-box; 
 	-webkit-box-orient: vertical; 
-	text-shadow: 1px 1px 1px black;
     color: #fff;
 	cursor: default;
-
+	text-shadow: 1px 1px #000;
 }
 .app:focus .box{
 	height: auto;

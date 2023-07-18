@@ -5,10 +5,10 @@ import { findFile } from "../../utils";
 import Win from "../window/window.vue";
 
 const props=defineProps({
-	// path:{
-	// 	type:String,
-	// 	default:""
-	// },
+	path:{
+		type:String,
+		default:""
+	},
 	// pid:{
 	// 	type:Number,
 	// 	default:0
@@ -90,10 +90,14 @@ function skip(){
 		}
 	}
 }
+function find(){
+	console.log("searchKeyword.value:",searchKeyword.value);
+	alert("搜索未制作")
+}
 </script>
 
 <template>
-<Win :path="args[0]">
+<Win :path="path">
 	<template v-slot:title>
 		文件管理器<span class="path" v-text="tempPath"></span>
 	</template>
@@ -111,7 +115,7 @@ function skip(){
 			<div class="skip" @click="skip">
 				→
 			</div>
-			<input type="text" class="searchKeyword" v-model="searchKeyword" placeholder="搜索">
+			<input type="text" class="searchKeyword" v-model="searchKeyword" placeholder="搜索" @keydown.enter="find">
 		</div>
 		<div class="body">
 			<div v-for="file in dir" @click="open(file)" :key="file.name">

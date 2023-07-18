@@ -17,20 +17,20 @@ const emits=defineEmits([])
 const win=ref(null)
 const winMove=ref(null)
 // let offset = { x: 0, y: 0 };
-const position=reactive({
-	x:0,
-	y:0
-})
-const myWindow=reactive({
-	w:50,
-	h:50
-})
+// const position=reactive({
+// 	x:0,
+// 	y:0
+// })
+// const myWindow=reactive({
+// 	w:50,
+// 	h:50
+// })
 const windowState=reactive({
 	isMax:false,
 	x:0,
 	y:0,
 	w:50,
-	h:50
+	h:60
 })
 const winInfo=createWindow(props.pid)
 onMounted(()=>{
@@ -135,10 +135,6 @@ onUnmounted(()=>{
 	z-index: 2;
 	outline: 1px solid #949494;
 	box-shadow: 1px 1px 6px 0px #0a0a0a57;
-	top: 50%;
-	left: 50%;
-	width: 50%;
-	height: 50%;
 	font-size: 12px;
 	display: flex;
 	flex-direction: column;
@@ -208,10 +204,6 @@ onUnmounted(()=>{
 .content{
 	flex-grow: 1;
 	background-color: rgb(255, 255, 255);
-	display: flex;
-	flex-direction: row;
-	flex-wrap: wrap;
-	align-content: flex-start;
 	overflow: auto;
 }
 .root_dir{

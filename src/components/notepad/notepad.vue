@@ -2,19 +2,55 @@
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
 import {systemDirectory} from "../../App"
 import Win from "../window/window.vue";
+import { findFile, getApp } from "../../utils";
+// const props=defineProps({
+// 	path:{
+// 		type:String,
+// 		default:""
+// 	},
+// 	pid:{
+// 		type:Number,
+// 		default:0
+// 	}
+// })
 const props=defineProps({
 	path:{
+		type:String,
+		default:""
+	},
+	pwd:{
+		type:String,
+		default:""
+	},
+	targetPath:{
+		type:String,
+		default:""
+	},
+	title:{
 		type:String,
 		default:""
 	},
 	pid:{
 		type:Number,
 		default:0
-	}
+	},
+	args:{
+		type:String,
+		default:""
+	},
 })
+console.log("props:",props);
+const args=computed(()=>{
+	return props.args.split(" ")
+})//path （开始路径） 
 const file=ref({})
 const emits=defineEmits([])
 
+watchEffect(()=>{
+	console.log("props.targetPath:",props.targetPath);
+	console.log("findFile(systemDirectory,props.targetPath):",findFile(systemDirectory,props.targetPath));
+	file.value=findFile(systemDirectory,props.targetPath)
+})
 </script>
 
 <template>
@@ -22,9 +58,12 @@ const emits=defineEmits([])
 	<template v-slot:title>
 		记事本
 	</template>
-	<div class="function">
+	<div class="content">
+		<div class="function">
+			功能区 未制作
+		</div>
+		<div class="body" v-text="file?.content"></div>
 	</div>
-	<div class="body" v-text="file.content"></div>
 </Win>
 <!-- <div :tabindex="pid"  class="notepad" ref="notepad" :style="{left:position.x+'px',top:position.y+'px'}">
 	<div class="header" ref="notepadMove">
@@ -142,10 +181,14 @@ const emits=defineEmits([])
 	overflow: hidden;
 	white-space: nowrap;
 }
+/* .content{
+	display: flex;
+} */
 .function{
 	display: flex;
 	flex-direction: row;
 	padding: 0.4em 1em 0.4em 0.4em;
+	border-bottom: 1px solid #dbdbdb;
 }
 .history{
 	display: flex;
