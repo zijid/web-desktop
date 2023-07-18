@@ -76,9 +76,9 @@ function actionUpdate(){
 export function getWindow(pid){//名字，pid，运行程序
 	return windowList.find(i=>i.pid===pid)
 }
-setInterval(() => {
-	console.log("windowList:",windowList);
-}, 1000);
+// setInterval(() => {
+// 	console.log("windowList:",windowList);
+// }, 1000);
 let hideCount=0
 export function showWindow(pid,type){
 	const len=windowList.length-1-hideCount

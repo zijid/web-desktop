@@ -1,5 +1,5 @@
 <script setup>
-import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick,provide,inject} from "vue";
+import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick,provide,inject,onUnmounted} from "vue";
 import {getApp} from "../../utils/index"
 import { showWindow,closeWindow,createWindow,hideWindow} from "../../hooks/system";
 const props=defineProps({
@@ -21,12 +21,23 @@ const position=reactive({
 	x:0,
 	y:0
 })
+const myWindow=reactive({
+	w:50,
+	h:50
+})
+const windowState=reactive({
+	isMax:false,
+	x:0,
+	y:0,
+	w:50,
+	h:50
+})
 const winInfo=createWindow(props.pid)
 onMounted(()=>{
 	const winEl=win.value
 	if(winEl){
-		position.x=window.innerWidth/2-winEl.offsetWidth/2+winInfo.z*50
-		position.y=window.innerHeight/2-winEl.offsetHeight/2+winInfo.z*50
+		windowState.x=window.innerWidth/2-winEl.offsetWidth/2+winInfo.z*50
+		windowState.y=window.innerHeight/2-winEl.offsetHeight/2+winInfo.z*50
 	}
 })
 function activeApp(){
@@ -57,23 +68,54 @@ function activeApp(){
 // function handleMouseUp() {
 // 	isDown=false
 // }
-function max(pid){
-
+function max(){
+	windowState.isMax=true
+	windowState.x=0
+	windowState.y=0
+	// myWindow.w=100
+	// myWindow.h=100
 }
 function close(pid){
 
 }
+function move(event){
+	// console.log('自定义事件已触发:', event.detail.message);
+	if(windowState.isMax===true){
+		// windowState.isMax=false
+	}
+}
+
+document.addEventListener('move', move);
+onUnmounted(()=>{
+	document.removeEventListener('move', move);
+})
 </script>
 
 <template>
-<div :tabindex="winInfo.pid" class="win" ref="win" v-show="winInfo.z>-1" :style="{left:position.x+'px',top:position.y+'px',zIndex:winInfo.z}" @mousedown="activeApp">
-	<div class="header" ref="winMove" v-move="position">
+<div :tabindex="winInfo.pid" class="win" ref="win" v-show="winInfo.z>-1" :class="{max:windowState.isMax}" :style="{left:windowState.x+'px',top:windowState.y+'px',zIndex:winInfo.z,width:windowState.w+'%',height:`calc( ${windowState.h}% - var(--tab-height) )`}" @mousedown="activeApp">
+	<div class="header" ref="winMove" v-move="windowState" @move="move">
 		<div style="pointer-events: none;">
 			<slot name="title"></slot>
 		</div>
 		<div class="handle">
 			<div class="min" @focus.stop @click.stop="hideWindow(winInfo.pid)">━</div>
-			<div class="max" @click.stop="max(winInfo.pid)">⬜</div>
+			<div class="max" @click.stop="max(winInfo.pid)">
+					<svg width="12" height="12" xmlns="http://www.w3.org/2000/svg" data-v-c30228d9="">
+						<g data-v-c30228d9="">
+							<title data-v-c30228d9="">缩小</title>
+							<rect stroke-width="1" id="svg_4" height="6" width="10" y="3" x="2" stroke="#000" fill="transparent" data-v-c30228d9=""></rect>
+							<rect stroke-width="1" id="svg_3" height="6" width="10" y="6" x="0" stroke="#000" data-v-c30228d9="" fill="#fff"></rect>
+						</g>
+					</svg>
+
+				<!-- <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12">
+
+					<g>
+						<title>Layer 1</title>
+						<rect stroke="#000" stroke-width="2" id="svg_4" height="12" width="12" y="0" x="0" fill="#fff"/>
+					</g>
+				</svg> -->
+			</div>
 			<div class="close" @mousedown.stop @click.stop="closeWindow(winInfo.pid)">✖</div>
 		</div>
 	</div>
@@ -102,12 +144,20 @@ function close(pid){
 	flex-direction: column;
 	user-select: none;
 }
+.max{
+	transition: all 0.3s ease;
+	top: 0 !important;
+	left: 0 !important;
+	width: 100% !important;
+	height: calc( 100% - var(--tab-height)) !important;
+}
 .header{
 	cursor: move;
 	padding:0.5em 1em;
 	user-select: none;
 	border: 1px solid #dbdbdb;
 	position: relative;
+	
 }
 .path{
 	cursor: auto;
@@ -120,11 +170,13 @@ function close(pid){
 	flex-direction: row;
 	text-align: center;
 	cursor: auto;
+	width: 6em;
 }
 .handle>div{
 	width: 2em;
 	height: 2em;
 	line-height: 2em;
+	flex: 1;
 }
 .min{
 	--hover-bg-color:#e4e4e4;

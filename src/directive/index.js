@@ -1,3 +1,4 @@
+import { nextTick } from "vue";
 export default{
 	install(app){
 		let offset = { x: 0, y: 0 };
@@ -23,21 +24,42 @@ export default{
 				document.addEventListener('mousedown', handleMouseDown);
 				document.addEventListener('mousemove', handleMouseMove);
 				document.addEventListener('mouseup', handleMouseUp);
+				
+				// 监听自定义事件并处理传递的数据
+				
+				// 触发自定义事件
 				function handleMouseDown(e) {
+					
 					if (e.target ===el) {
 						isDown=true
-						const rect = el.getBoundingClientRect();
-						offset.x = e.clientX - rect.left;
+						let rect = el.getBoundingClientRect();
+						if(position.isMax){
+							const p=e.clientX/el.offsetWidth
+							const width=window.innerWidth
+							const wp=position.w/100*width*p
+							offset.x = wp+rect.left;
+						}else{
+							offset.x = e.clientX-rect.left;
+						}
 						offset.y = e.clientY - rect.top;
 					}
 				}
 				
 				function handleMouseMove(e) {
 					if(isDown){
+						if(position.isMax){
+							position.isMax=false
+						}
 						const x = e.clientX - offset.x;
 						const y = e.clientY - offset.y;
 						position.x = x
 						position.y = y
+						const customEvent = new CustomEvent('move', {
+							detail: {
+							  message:position
+							}
+						});
+						document.dispatchEvent(customEvent);
 					}
 				}
 				function handleMouseUp() {
