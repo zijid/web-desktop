@@ -142,7 +142,6 @@ function showApp(pid,index){
 				</div>
 			</template> -->
 			<template v-for="(progress,index) in progressList" :key="progress.pid">
-				{{ progress }}
 				<component :is="progress.exec" v-bind="progress" ref="app"></component>
 				<div class="app_item" :class="{active_app:activeAppPid===progress.pid}" @click="showApp(progress.pid,index)">
 					{{ progress.title }}
