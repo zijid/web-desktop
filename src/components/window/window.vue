@@ -69,9 +69,11 @@ function activeApp(){
 // 	isDown=false
 // }
 function max(){
-	windowState.isMax=true
-	windowState.x=0
-	windowState.y=0
+	if(windowState.isMax===true){
+		windowState.isMax=false
+	}else{
+		windowState.isMax=true
+	}
 	// myWindow.w=100
 	// myWindow.h=100
 }
@@ -92,7 +94,6 @@ onUnmounted(()=>{
 </script>
 
 <template>
-	{{ winInfo.z }}
 <div :tabindex="winInfo.pid" class="win" ref="win" v-show="winInfo.z>-1" :class="{max:windowState.isMax}" :style="{left:windowState.x+'px',top:windowState.y+'px',zIndex:winInfo.z,width:windowState.w+'%',height:`calc( ${windowState.h}% - var(--tab-height) )`}" @mousedown="activeApp">
 	<div class="header" ref="winMove" v-move="windowState" @move="move">
 		<div style="pointer-events: none;">
@@ -101,21 +102,19 @@ onUnmounted(()=>{
 		<div class="handle">
 			<div class="min" @focus.stop @click.stop="hideWindow(winInfo.pid)">━</div>
 			<div class="max" @click.stop="max(winInfo.pid)">
-					<svg width="12" height="12" xmlns="http://www.w3.org/2000/svg" data-v-c30228d9="">
-						<g data-v-c30228d9="">
-							<title data-v-c30228d9="">缩小</title>
-							<rect stroke-width="1" id="svg_4" height="6" width="10" y="3" x="2" stroke="#000" fill="transparent" data-v-c30228d9=""></rect>
-							<rect stroke-width="1" id="svg_3" height="6" width="10" y="6" x="0" stroke="#000" data-v-c30228d9="" fill="#fff"></rect>
-						</g>
-					</svg>
-
-				<!-- <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12">
-
+				<svg width="12" height="12" xmlns="http://www.w3.org/2000/svg" data-v-c30228d9="" v-if="windowState.isMax===true">
+					<g data-v-c30228d9="">
+						<title data-v-c30228d9="">缩小</title>
+						<rect stroke-width="1" id="svg_4" height="6" width="10" y="3" x="2" stroke="#000" fill="transparent" data-v-c30228d9=""></rect>
+						<rect stroke-width="1" id="svg_3" height="6" width="10" y="6" x="0" stroke="#000" data-v-c30228d9="" fill="#fff"></rect>
+					</g>
+				</svg>
+				<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" v-if="windowState.isMax===false">
 					<g>
-						<title>Layer 1</title>
+						<title>放大</title>
 						<rect stroke="#000" stroke-width="2" id="svg_4" height="12" width="12" y="0" x="0" fill="#fff"/>
 					</g>
-				</svg> -->
+				</svg>
 			</div>
 			<div class="close" @mousedown.stop @click.stop="closeWindow(winInfo.pid)">✖</div>
 		</div>

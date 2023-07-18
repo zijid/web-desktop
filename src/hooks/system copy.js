@@ -36,7 +36,7 @@ export function createWindow(pid){//名字，pid，运行程序
 		pid:pid,
 		args:progress.args,
 		exec:progress.exec,
-		z:windowList.length+1
+		z:windowList.length
 	})-1]
 }
 export function closeWindow(pid){//名字，pid，运行程序
@@ -44,8 +44,10 @@ export function closeWindow(pid){//名字，pid，运行程序
 	if(!isNaN(index)){
 		progressList.splice(index,1)
 	}
+	console.log("windowList,pid:",windowList,pid);
 	index=windowList.findIndex(i=>i.pid===pid)
 	if(!isNaN(index)){
+		console.log("index:",index);
 		let obj=windowList[index]
 		const len=windowList.length-1-hideCount
 		windowList.sort((a, b) => a.z - b.z);
@@ -69,14 +71,14 @@ function actionUpdate(){
 export function getWindow(pid){//名字，pid，运行程序
 	return windowList.find(i=>i.pid===pid)
 }
-setInterval(() => {
-	console.log("windowList:",windowList);
-}, 1000);
+// setInterval(() => {
+// 	console.log("windowList:",windowList);
+// }, 1000);
 let hideCount=0
 export function showWindow(pid,type){
 	const len=windowList.length-1-hideCount
 	const thisWin=getWindow(pid)
-	if(type==="tab"&&thisWin.z===windowList.length-1+1-hideCount){
+	if(type==="tab"&&thisWin.z===windowList.length-1-hideCount){
 		hideWindow(pid)
 		return
 	}
@@ -95,10 +97,10 @@ export function showWindow(pid,type){
 	// 	return
 	// }
 	windowList.sort((a, b) => a.z - b.z);
-	for(let i=thisWin.z;i<=len;i++){
+	for(let i=thisWin.z+1;i<=len;i++){
 		windowList[i+hideCount].z--
 	}
-	thisWin.z=len+1
+	thisWin.z=len
 	activeAppPid.value=thisWin.pid
 }
 
@@ -125,9 +127,6 @@ export function hideWindow(pid){
 	actionUpdate()
 }
 export function hideToShowWindow(pid){
-	if(showDesktopState.value){
-		showDesktopState.value=false
-	}
 	const thisWin=getWindow(pid)
 	// hideCount=windowList.reduce((prev, current) => {
 	// 	return current.z <0 ? prev+1 : 0;
@@ -137,25 +136,28 @@ export function hideToShowWindow(pid){
 	if(len<0){
 		len=0
 	}
-	thisWin.z=len+1
+	thisWin.z=len
 	activeAppPid.value=pid
 }
 
 const showDesktopState=ref(false)
 
 export function showDesktop(){
-	if(showDesktopState.value===true){//显示
-		console.log("隐藏");
+	if(showDesktopState.value===true){
+		showDesktopState.value=false
+		const len=windowList.length
+		windowList.forEach(i=>{
+			console.log("i.z:",i.z);
+			if(i.z===0){
+				i.z=-len
+			}else{
+				i.z=-i.z
+			}
+		})
+	}else{
 		showDesktopState.value=false
 		windowList.forEach(i=>{
-			i.z=Math.abs(i.z)
+			i.z=-i.z
 		})
-		actionUpdate()
-	}else{
-		showDesktopState.value=true
-		windowList.forEach(i=>{
-			i.z=-Math.abs(i.z)
-		})
-		activeAppPid.value=null
 	}
 }

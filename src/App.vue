@@ -5,7 +5,7 @@ import { addApp,data ,openAppList} from "./hooks";
 import { openApp } from "./utils";
 import { FUNCTION,DIR } from "./components/menu/type";
 import "./App.js"//初始化一些东西
-import {createProgress,progressList,showWindow,activeAppPid,hideToShowWindow,windowList} from "./hooks/system"
+import {createProgress,progressList,showWindow,activeAppPid,hideToShowWindow,windowList,showDesktop} from "./hooks/system"
 import Explorer from "./components/explorer/explorer.vue";
 import Notepad from "./components/notepad/notepad.vue";
 import Win from "./components/window/window.vue";
@@ -148,8 +148,7 @@ function showApp(pid,index){
 					{{ progress.title }}
 				</div>
 			</template>
-
-			
+			<div class="showDesktop" @click="showDesktop"></div>
 		</div>
 	</div>
 </template>
@@ -175,6 +174,18 @@ body{
 	--line-height:14px;
 	--tab-height:40px;
 	padding-bottom: var(--tab-height);
+}
+
+.showDesktop{
+    position: absolute;
+    right: 0;
+    width: 10px;
+    height: 100%;
+    background: #00000033;
+    box-shadow: -1px 0px 1px #ffffff57;
+}
+.showDesktop:hover{
+	background-color: #ffffff3a;
 }
 .tab{
 	width: 100%;
