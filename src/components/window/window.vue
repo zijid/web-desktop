@@ -38,7 +38,7 @@ onMounted(()=>{
 	if(winEl){
 		const w=window.innerWidth
 		const h=window.innerHeight
-		windowState.x=h/2-winEl.offsetWidth/2+winInfo.z*50
+		windowState.x=w/2-winEl.offsetWidth/2+winInfo.z*50
 		windowState.y=window.innerHeight/2-winEl.offsetHeight/2+winInfo.z*50
 		if(windowState.x>w-100||windowState.y>h-100){
 			windowState.x=winEl.offsetWidth
