@@ -91,7 +91,6 @@ function skip(){
 	}
 }
 function find(){
-	console.log("searchKeyword.value:",searchKeyword.value);
 	alert("搜索未制作")
 }
 </script>

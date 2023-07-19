@@ -39,7 +39,6 @@ const props=defineProps({
 		default:""
 	},
 })
-console.log("props:",props);
 const args=computed(()=>{
 	return props.args.split(" ")
 })//path （开始路径） 
@@ -47,8 +46,6 @@ const file=ref({})
 const emits=defineEmits([])
 
 watchEffect(()=>{
-	console.log("props.targetPath:",props.targetPath);
-	console.log("findFile(systemDirectory,props.targetPath):",findFile(systemDirectory,props.targetPath));
 	file.value=findFile(systemDirectory,props.targetPath)
 })
 </script>

@@ -48,16 +48,15 @@ export function createWindow(pid){//名字，pid，运行程序
 }
 export function closeWindow(pid){//名字，pid，运行程序
 	let index=progressList.findIndex(i=>i.pid===pid)
-	if(!isNaN(index)){
+	if(!isNaN(index)&&index>-1){
 		progressList.splice(index,1)
 	}
 	index=windowList.findIndex(i=>i.pid===pid)
-	if(!isNaN(index)){
+	if(!isNaN(index)&&index>-1){
 		let obj=windowList[index]
 		const len=windowList.length-1-hideCount
 		windowList.sort((a, b) => a.z - b.z);
-		for(let i=obj.z+1;i<=len;i++){
-			console.log("i+hideCount:",i+hideCount);
+		for(let i=obj.z;i<len;i++){
 			windowList[i+hideCount].z--
 		}
 		windowList.splice(index,1)
@@ -77,9 +76,9 @@ function actionUpdate(){
 export function getWindow(pid){//名字，pid，运行程序
 	return windowList.find(i=>i.pid===pid)
 }
-setInterval(() => {
-	console.log("windowList:",windowList);
-}, 1000);
+// setInterval(() => {
+// 	console.log("windowList:",windowList);
+// }, 1000);
 let hideCount=0
 export function showWindow(pid,type){
 	const len=windowList.length-1-hideCount
@@ -102,16 +101,28 @@ export function showWindow(pid,type){
 	// 	hideCount++
 	// 	return
 	// }
-	windowList.sort((a, b) => a.z - b.z);
-	for(let i=thisWin.z;i<=len;i++){
-		windowList[i+hideCount].z--
-	}
+	// windowList.sort((a, b) => a.z - b.z);
+	// for(let i=thisWin.z+1;i<=len;i++){
+	// 	windowList[i+hideCount].z--
+	// }
+	thisWin.z=99999999999999999
+	sortList()
 	thisWin.z=len+1
+	windowList.pop()
+	windowList.push(thisWin)
 	activeAppPid.value=thisWin.pid
 }
-
+function sortList(){
+	windowList.sort((a, b) => a.z - b.z);
+	windowList.forEach((i,index)=>{
+		if(i.z<0){
+			i.z=index-1
+		}else{
+			i.z=index+1
+		}
+	})
+}
 export function hideWindow(pid){
-	console.log("隐藏");
 	const thisWin=getWindow(pid)
 	// hideCount=windowList.reduce((prev, current) => {
 	// 	return current.z <0 ? prev+1 : 0;
@@ -121,10 +132,11 @@ export function hideWindow(pid){
 	}
 	hideCount++
 	const len=windowList.length-1-hideCount
-	windowList.sort((a, b) => a.z - b.z);
-	for(let i=thisWin.z;i<=len;i++){
-		console.log("i:",i);
-		windowList[i+hideCount].z--
+	if(thisWin.z<len){
+		windowList.sort((a, b) => a.z - b.z);
+		for(let i=thisWin.z;i<=len;i++){
+			windowList[i+hideCount].z--
+		}
 	}
 	thisWin.z=-thisWin.z
 	if(!thisWin.z){
@@ -153,7 +165,6 @@ const showDesktopState=ref(false)
 
 export function showDesktop(){
 	if(showDesktopState.value===true){//显示
-		console.log("隐藏");
 		showDesktopState.value=false
 		windowList.forEach(i=>{
 			i.z=Math.abs(i.z)

@@ -109,7 +109,6 @@ nextTick(()=>{
 function showApp(pid,index){
 	// console.log("app.value[index].$el:",app.value[index].$el);
 	// app.value[index].$el.focus()
-	console.log("pid:",pid);
 	if(windowList.find(i=>i.pid===pid).z>-1){
 		showWindow(pid,"tab")
 	}else{
@@ -150,6 +149,9 @@ function showApp(pid,index){
 			<div class="showDesktop" @click="showDesktop"></div>
 		</div>
 	</div>
+	<!-- <div v-cloak>
+		加载中...
+	</div> -->
 </template>
 <style>
 body{
@@ -161,6 +163,12 @@ body{
 }
 </style>
 <style scoped>
+/* [v-cloak] {
+	position: fixed;
+	z-index: 999;
+	inset: 0;
+	background-color: red;
+} */
 .desktop{
 	display: flex;
 	flex-direction: column;
@@ -260,6 +268,7 @@ body{
     color: #fff;
 	cursor: default;
 	text-shadow: 1px 1px #000;
+	user-select: none;
 }
 .app:focus .box{
 	height: auto;
