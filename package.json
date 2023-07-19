@@ -7,10 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-	"github":"git add .&git commit -m '1.0'&git push https://github.com/zijid/web-desktop.git"
+    "github": "git add .&git commit -m '1.0'&git push https://github.com/zijid/web-desktop.git"
   },
   "dependencies": {
-    "vue": "^3.2.47"
+    "vue": "^3.3.4"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.1.0",
