@@ -109,10 +109,24 @@ nextTick(()=>{
 function showApp(pid,index){
 	// console.log("app.value[index].$el:",app.value[index].$el);
 	// app.value[index].$el.focus()
-	if(windowList.find(i=>i.pid===pid).z>-1){
+	if(windowList.find(i=>i.pid===pid).z>0){
+		console.log("showWindow");
 		showWindow(pid,"tab")
 	}else{
+		console.log("hideToShowWindow");
 		hideToShowWindow(pid)
+	}
+}
+function rFun(fun){
+	let st=false
+	return ()=>{
+		if(st){
+			return
+		}
+		st=true
+		return fun().then(r=>{
+			st=false
+		})
 	}
 }
 </script>

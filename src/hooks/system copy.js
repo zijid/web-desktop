@@ -1,16 +1,23 @@
 //进程管理
-import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
-import { markRaw } from 'vue';
+import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick,markRaw} from "vue";
 export const progressList=reactive([])
 export const activeAppPid=ref(null)
 
-export function createProgress(title,exec,args){
+export function createProgress(title,exec,pwd,targetPath,args=""){
+	/*
+	文件名字
+	运行方式
+	目标位置
+	文件位置
+	文件类型
+	 */
 	progressList.push({
-		title,
-		exec:markRaw(exec),
-		// pwd,
-		pid:progressList.length+1,
-		args
+		title,//文件名
+		exec:markRaw(exec),//文件类型
+		pid:progressList.length+1,//pid
+		pwd,//文件位置
+		targetPath,//目标位置
+		args//参数
 	})
 }
 export function refreshProgressAll(){
@@ -36,22 +43,20 @@ export function createWindow(pid){//名字，pid，运行程序
 		pid:pid,
 		args:progress.args,
 		exec:progress.exec,
-		z:windowList.length
+		z:windowList.length+1
 	})-1]
 }
 export function closeWindow(pid){//名字，pid，运行程序
 	let index=progressList.findIndex(i=>i.pid===pid)
-	if(!isNaN(index)){
+	if(!isNaN(index)&&index>-1){
 		progressList.splice(index,1)
 	}
-	console.log("windowList,pid:",windowList,pid);
 	index=windowList.findIndex(i=>i.pid===pid)
-	if(!isNaN(index)){
-		console.log("index:",index);
+	if(!isNaN(index)&&index>-1){
 		let obj=windowList[index]
 		const len=windowList.length-1-hideCount
 		windowList.sort((a, b) => a.z - b.z);
-		for(let i=obj.z+1;i<=len;i++){
+		for(let i=obj.z;i<len;i++){
 			windowList[i+hideCount].z--
 		}
 		windowList.splice(index,1)
@@ -76,9 +81,11 @@ export function getWindow(pid){//名字，pid，运行程序
 // }, 1000);
 let hideCount=0
 export function showWindow(pid,type){
+	console.log("sssss:",);
 	const len=windowList.length-1-hideCount
 	const thisWin=getWindow(pid)
-	if(type==="tab"&&thisWin.z===windowList.length-1-hideCount){
+	if(type==="tab"&&thisWin.z===windowList.length-1+1-hideCount){
+		console.log("hideWindow:");
 		hideWindow(pid)
 		return
 	}
@@ -96,16 +103,34 @@ export function showWindow(pid,type){
 	// 	hideCount++
 	// 	return
 	// }
-	windowList.sort((a, b) => a.z - b.z);
-	for(let i=thisWin.z+1;i<=len;i++){
-		windowList[i+hideCount].z--
-	}
-	thisWin.z=len
+	// windowList.sort((a, b) => a.z - b.z);
+	// for(let i=thisWin.z+1;i<=len;i++){
+	// 	windowList[i+hideCount].z--
+	// }
+	thisWin.z=99999999999999999
+	sortList()
+	thisWin.z=len+1+hideCount
+	windowList.pop()
+	console.log("hideCount:",hideCount);
+	windowList.forEach((i,index)=>{
+		if(i.z>0){
+			i.z!=index+1-hideCount
+		}
+	})
+	windowList.push(thisWin)
 	activeAppPid.value=thisWin.pid
 }
-
+function sortList(){
+	windowList.sort((a, b) => a.z - b.z);
+	windowList.forEach((i,index)=>{
+		if(i.z<0){
+			i.z=index-1
+		}else{
+			i.z=index+1
+		}
+	})
+}
 export function hideWindow(pid){
-	console.log("隐藏");
 	const thisWin=getWindow(pid)
 	// hideCount=windowList.reduce((prev, current) => {
 	// 	return current.z <0 ? prev+1 : 0;
@@ -115,10 +140,11 @@ export function hideWindow(pid){
 	}
 	hideCount++
 	const len=windowList.length-1-hideCount
-	windowList.sort((a, b) => a.z - b.z);
-	for(let i=thisWin.z;i<=len;i++){
-		console.log("i:",i);
-		windowList[i+hideCount].z--
+	if(thisWin.z<len){
+		windowList.sort((a, b) => a.z - b.z);
+		for(let i=thisWin.z;i<=len;i++){
+			windowList[i+hideCount].z--
+		}
 	}
 	thisWin.z=-thisWin.z
 	if(!thisWin.z){
@@ -127,37 +153,57 @@ export function hideWindow(pid){
 	actionUpdate()
 }
 export function hideToShowWindow(pid){
+	if(showDesktopState.value){
+		showDesktopState.value=false
+	}
 	const thisWin=getWindow(pid)
 	// hideCount=windowList.reduce((prev, current) => {
 	// 	return current.z <0 ? prev+1 : 0;
 	// },0);
+	console.log("thisWin.z:",thisWin.z);
 	hideCount--
 	let len=windowList.length-1-hideCount
 	if(len<0){
 		len=0
 	}
-	thisWin.z=len
+	
+	
+	// windowList.forEach((i,index)=>{
+	// 	if(i.z>0){
+	// 		i.z!=index+1-hideCount
+	// 	}
+	// })
+	// thisWin.z=len+1
+	
+	thisWin.z=99999999999999999
+	sortList()
+	windowList.pop()
+	console.log("hideCount:",hideCount);
+	windowList.forEach((i,index)=>{
+		if(i.z>0){
+			i.z!=index+1-hideCount
+		}
+	})
+	windowList.push(thisWin)
+	console.log("thisWin:",thisWin);
+	thisWin.z=len+1+hideCount
 	activeAppPid.value=pid
 }
 
 const showDesktopState=ref(false)
 
 export function showDesktop(){
-	if(showDesktopState.value===true){
+	if(showDesktopState.value===true){//显示
 		showDesktopState.value=false
-		const len=windowList.length
 		windowList.forEach(i=>{
-			console.log("i.z:",i.z);
-			if(i.z===0){
-				i.z=-len
-			}else{
-				i.z=-i.z
-			}
+			i.z=Math.abs(i.z)
 		})
+		actionUpdate()
 	}else{
-		showDesktopState.value=false
+		showDesktopState.value=true
 		windowList.forEach(i=>{
-			i.z=-i.z
+			i.z=-Math.abs(i.z)
 		})
+		activeAppPid.value=null
 	}
 }

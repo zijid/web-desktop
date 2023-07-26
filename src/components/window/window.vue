@@ -106,7 +106,7 @@ onUnmounted(()=>{
 			<slot name="title"></slot>
 		</div>
 		<div class="handle">
-			<div class="min" @focus.stop @click.stop="hideWindow(winInfo.pid)">━</div>
+			<div class="min" @focus.stop @mousedown.stop @click.stop="hideWindow(winInfo.pid)">━</div>
 			<div class="max" @click.stop="max(winInfo.pid)">
 				<svg width="12" height="12" xmlns="http://www.w3.org/2000/svg" data-v-c30228d9="" v-if="windowState.isMax===true">
 					<g data-v-c30228d9="">
