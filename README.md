@@ -39,3 +39,5 @@
 	git add .
 	git commit -m "1.0"
 	git push https://github.com/zijid/web-desktop.git
+
+更新

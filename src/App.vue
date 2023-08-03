@@ -1,14 +1,13 @@
 <script setup>
-import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
+import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick,defineAsyncComponent} from "vue";
 import Menu from "./components/menu/menu.vue"
 import { addApp,data ,openAppList} from "./hooks";
-import {createProgress,progressList,showWindow,activeAppPid,hideToShowWindow,windowList,showDesktop} from "./hooks/system"
+import {createProgress,progressList,showWindow,activeAppPid,windowList,showDesktop} from "./hooks/system"
 import { FUNCTION,DIR } from "./components/menu/type";
 import "./App.js"//初始化一些东西
-// import Explorer from "./components/explorer/explorer.vue";
-// import Notepad from "./components/notepad/notepad.vue";
-// import Win from "./components/window/window.vue";
 
+// let nameName=defineAsyncComponent(()=>import("http://localhost/1.js"))
+// console.log("nameName:",nameName);
 const item=ref("")
 const position=reactive({
 	x:-1000,y:-1000
@@ -107,15 +106,7 @@ nextTick(()=>{
 })
 
 function showApp(pid,index){
-	// console.log("app.value[index].$el:",app.value[index].$el);
-	// app.value[index].$el.focus()
-	if(windowList.find(i=>i.pid===pid).z>0){
-		console.log("showWindow");
-		showWindow(pid,"tab")
-	}else{
-		console.log("hideToShowWindow");
-		hideToShowWindow(pid)
-	}
+	showWindow(pid,"tab")
 }
 function rFun(fun){
 	let st=false
@@ -146,6 +137,11 @@ function rFun(fun){
 				</div>
 			</div>
 		</div>
+		<div id="windows">
+			<template v-for="(progress,index) in progressList" :key="progress.pid">
+				<component :is="progress.exec" v-bind="progress" ref="app"></component>
+			</template>
+		</div>
 		<div class="tab">
 			<!-- <template v-for="(app,index) in openAppList" :key="app.path">
 					<Explorer v-if="app.exec===0" :path="app.path" :pid="app.pid" ref="app"></Explorer>
@@ -155,8 +151,7 @@ function rFun(fun){
 				</div>
 			</template> -->
 			<template v-for="(progress,index) in progressList" :key="progress.pid">
-				<component :is="progress.exec" v-bind="progress" ref="app"></component>
-				<div class="app_item" :class="{active_app:activeAppPid===progress.pid}" @click="showApp(progress.pid,index)">
+				<div v-if="windowList.find(i=>i.pid===progress.pid)" class="app_item" :class="{active_app:activeAppPid===progress.pid}" @click="showApp(progress.pid,index)">
 					{{ progress.title }}
 				</div>
 			</template>

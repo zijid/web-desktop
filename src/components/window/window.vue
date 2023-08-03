@@ -40,10 +40,13 @@ onMounted(()=>{
 		const h=window.innerHeight
 		windowState.x=w/2-winEl.offsetWidth/2+winInfo.z*50
 		windowState.y=window.innerHeight/2-winEl.offsetHeight/2+winInfo.z*50
-		if(windowState.x>w-100||windowState.y>h-100){
-			windowState.x=winEl.offsetWidth
+		if(windowState.x>w/2-100){
+			windowState.x=0
+		}
+		if(windowState.y>h/2-100){
 			windowState.y=0
 		}
+		
 	}
 })
 function activeApp(){
@@ -100,35 +103,35 @@ onUnmounted(()=>{
 </script>
 
 <template>
-<div :tabindex="winInfo.pid" class="win" ref="win" v-show="winInfo.z>-1" :class="{max:windowState.isMax}" :style="{left:windowState.x+'px',top:windowState.y+'px',zIndex:winInfo.z,width:windowState.w+'%',height:`calc( ${windowState.h}% - var(--tab-height) )`}" @mousedown="activeApp">
-	<div class="header" ref="winMove" v-move="windowState" @move="move">
-		<div style="pointer-events: none;">
-			<slot name="title"></slot>
-		</div>
-		<div class="handle">
-			<div class="min" @focus.stop @mousedown.stop @click.stop="hideWindow(winInfo.pid)">━</div>
-			<div class="max" @click.stop="max(winInfo.pid)">
-				<svg width="12" height="12" xmlns="http://www.w3.org/2000/svg" data-v-c30228d9="" v-if="windowState.isMax===true">
-					<g data-v-c30228d9="">
-						<title data-v-c30228d9="">缩小</title>
-						<rect stroke-width="1" id="svg_4" height="6" width="10" y="3" x="2" stroke="#000" fill="transparent" data-v-c30228d9=""></rect>
-						<rect stroke-width="1" id="svg_3" height="6" width="10" y="6" x="0" stroke="#000" data-v-c30228d9="" fill="#fff"></rect>
-					</g>
-				</svg>
-				<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" v-if="windowState.isMax===false">
-					<g>
-						<title>放大</title>
-						<rect stroke="#000" stroke-width="2" id="svg_4" height="12" width="12" y="0" x="0" fill="#fff"/>
-					</g>
-				</svg>
+	<div :tabindex="winInfo.pid" class="win" ref="win" v-show="winInfo.z>-1" :class="{max:windowState.isMax}" :style="{left:windowState.x+'px',top:windowState.y+'px',zIndex:winInfo.z,width:windowState.w+'%',height:`calc( ${windowState.h}% - var(--tab-height) )`}" @mousedown="activeApp">
+		<div class="header" ref="winMove" v-move="windowState" @move="move">
+			<div style="pointer-events: none;">
+				<slot name="title"></slot>
 			</div>
-			<div class="close" @mousedown.stop @click.stop="closeWindow(winInfo.pid)">✖</div>
+			<div class="handle">
+				<div class="min" @focus.stop @mousedown.stop @click.stop="hideWindow(winInfo.pid)">━</div>
+				<div class="max" @click.stop="max(winInfo.pid)">
+					<svg width="12" height="12" xmlns="http://www.w3.org/2000/svg" data-v-c30228d9="" v-if="windowState.isMax===true">
+						<g data-v-c30228d9="">
+							<title data-v-c30228d9="">缩小</title>
+							<rect stroke-width="1" id="svg_4" height="6" width="10" y="3" x="2" stroke="#000" fill="transparent" data-v-c30228d9=""></rect>
+							<rect stroke-width="1" id="svg_3" height="6" width="10" y="6" x="0" stroke="#000" data-v-c30228d9="" fill="#fff"></rect>
+						</g>
+					</svg>
+					<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" v-if="windowState.isMax===false">
+						<g>
+							<title>放大</title>
+							<rect stroke="#000" stroke-width="2" id="svg_4" height="12" width="12" y="0" x="0" fill="#fff"/>
+						</g>
+					</svg>
+				</div>
+				<div class="close" @mousedown.stop @click.stop="closeWindow(winInfo.pid)">✖</div>
+			</div>
+		</div>
+		<div class="content">
+			<slot :win="{path}"></slot>
 		</div>
 	</div>
-	<div class="content">
-		<slot :win="{path}"></slot>
-	</div>
-</div>
 </template>
 
 <style scoped>

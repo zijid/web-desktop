@@ -47,11 +47,11 @@ export const exec={
 	},
 }
 
-createProgress(exec["explorer"].title,exec["explorer"].app,"C:/用户/桌面","","a b ccc")
-createProgress(exec["explorer"].title,exec["explorer"].app,"C:/用户/桌面","","a b ccc")
-createProgress(exec["explorer"].title,exec["explorer"].app,"C:/用户/桌面","","a b ccc")
-createProgress(exec["explorer"].title,exec["explorer"].app,"C:/用户/桌面","","a b ccc")
-createProgress(exec["explorer"].title,exec["explorer"].app,"C:/用户/桌面","","a b ccc")
+// createProgress(exec["explorer"].title,exec["explorer"].app,"C:/用户/桌面","","a b ccc")
+// createProgress(exec["notepad"].title,exec["notepad"].app,"C:/用户/桌面","","a b ccc")
+// createProgress(exec["explorer"].title,exec["explorer"].app,"C:/用户/桌面","","a b ccc")
+// createProgress(exec["explorer"].title,exec["explorer"].app,"C:/用户/桌面","","a b ccc")
+// createProgress(exec["explorer"].title,exec["explorer"].app,"C:/用户/桌面","","a b ccc")
 // createProgress(exec["explorer"].title,exec["explorer"].app,"C:/用户/桌面","","a b ccc")
 // createProgress(exec["explorer"].title,exec["explorer"].app,"C:/用户/桌面","","a b ccc")
 // createProgress(exec["explorer"].title,exec["explorer"].app,"C:/用户/桌面","","a b ccc")
