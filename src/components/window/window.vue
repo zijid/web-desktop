@@ -1,7 +1,7 @@
 <script setup>
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick,provide,inject,onUnmounted} from "vue";
 import {getApp} from "../../utils/index"
-import { showWindow,closeWindow,createWindow,hideWindow} from "../../hooks/system";
+import { showWindow,closeWindow,createWindow,hideWindow,showCount} from "../../hooks/system";
 const props=defineProps({
 	path:{
 		type:String,
@@ -12,6 +12,7 @@ const props=defineProps({
 		default:0
 	}
 })
+const count=showCount()
 const emits=defineEmits([])
 // let isDown=false
 const win=ref(null)
@@ -38,8 +39,8 @@ onMounted(()=>{
 	if(winEl){
 		const w=window.innerWidth
 		const h=window.innerHeight
-		windowState.x=w/2-winEl.offsetWidth/2+winInfo.z*50
-		windowState.y=window.innerHeight/2-winEl.offsetHeight/2+winInfo.z*50
+		windowState.x=w/2-winEl.offsetWidth/2+count*50
+		windowState.y=window.innerHeight/2-winEl.offsetHeight/2+count*50
 		if(windowState.x>w/2-100){
 			windowState.x=0
 		}

@@ -90,6 +90,11 @@ function hide(thisWin){
 	thisWin.z=-1
 	sortList()
 }
+export function showCount(){
+	return windowList.reduce((count,i)=>{
+		return count+(i.z>0?1:0)
+	},0)
+}
 export function showWindow(pid,type){
 	const thisWin=windowList.find(i=>i.pid===pid)
 	if(thisWin){

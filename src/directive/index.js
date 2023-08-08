@@ -4,6 +4,7 @@ export default{
 		let offset = { x: 0, y: 0 };
 		app.directive('focus', {
 			mounted: (el,data) => {
+				console.log("el:",el);
 				el.focus()
 				if(typeof data.value==='function'){
 					el.addEventListener('focus', data.value);

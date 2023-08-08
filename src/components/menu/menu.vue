@@ -57,10 +57,12 @@ const style=computed(()=>{
 	const viewInElWidth=width-elWidth
 	const viewInElHeight=height-elHeight
 	let top=""
-	if(width>elWidth){//
+	if(width>elWidth){
 		if(x<viewInElWidth){//位置小于屏幕宽度-元素宽度
+			console.log("11:",width,elWidth);
 			result.x=x
 		}else{
+			console.log("22:",22);
 			result.x=viewInElWidth+w
 		}
 		if(y<viewInElHeight){//位置小于屏幕宽度-元素宽度
@@ -94,9 +96,11 @@ const style=computed(()=>{
 <style scoped>
 .show{
 	top:-500px !important;
+	opacity: 0 !important;
+	pointer-events: none !important;
 }
 .menu{
-	transition: all 0.3s ease 0s;
+	transition: opacity 0.1s ease 0s;
 	position: fixed;
 	border: 1px solid #a3a3a3;
 	top: 0;
