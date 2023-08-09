@@ -349,6 +349,7 @@ body{
 	text-shadow: 1px 1px #000;
 	user-select: none;
 	resize: none;
+	word-break: break-word;
 }
 .name:focus{
 	min-width: 2em;
