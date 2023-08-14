@@ -223,7 +223,7 @@ function editNameBlue(){
 </template>
 <style>
 body{
-	background-image: url(/bg.png);
+	background-image: url(/bg53k.jpg);
 	background-repeat: no-repeat;
 	overflow: hidden;
 	margin: 0;
