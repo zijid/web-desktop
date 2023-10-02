@@ -140,6 +140,7 @@ onUnmounted(()=>{
 	z-index: 8;
 }
 .win{
+	transition: z-index 0.3s ease;
 	position: fixed;
 	background-color: rgb(255, 255, 255);
 	z-index: 2;
