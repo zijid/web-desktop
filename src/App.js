@@ -2,7 +2,9 @@ import { openApp,File} from "./utils";
 import {createProgress,progressList} from "./hooks/system"
 import Explorer from "./components/explorer/explorer.vue";
 import Notepad from "./components/notepad/notepad.vue";
-const systemDirectory=[
+import { loadSystemFile } from "./utils/file";
+import "@/utils/file.js"
+let systemDirectory=[
 	new File("","C:",true,[
 		new File("C:","用户",true,[
 			new File("C:/用户","桌面",true),
@@ -23,6 +25,8 @@ const systemDirectory=[
 		new File("E:","文件夹2",true)
 	])
 ]
+systemDirectory=loadSystemFile()
+console.log("systemDirectory:",systemDirectory);
 // openApp(0,"E:")
 // openApp(0,"E:")
 // openApp(0,"E:/文件夹1")

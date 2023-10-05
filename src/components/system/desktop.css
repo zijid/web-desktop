@@ -1,0 +1,142 @@
+.desktop{
+	--size:12px;
+	--line-height:14px;
+	--tab-height:40px;
+	display: flex;
+	flex-direction: column;
+	flex-wrap: wrap;
+    align-content: flex-start;
+	width: 100vw;
+	height: 100vh;
+	overflow: hidden;
+	padding-bottom: var(--tab-height);
+}
+
+.showDesktop{
+    position: fixed;
+	bottom: 0;
+    right: 0;
+    width: 10px;
+	height:var(--tab-height);
+	background: #3a3a3a;
+    box-shadow: -1px 0px 1px #ffffff57;
+}
+.showDesktop:hover{
+	background-color: #ffffff3a;
+}
+.tab{
+	width: 100%;
+	height:var(--tab-height);
+	background-color: #0000007a;
+	position: fixed;
+	bottom: 0;
+	display: flex;
+	flex-direction: row;
+	z-index: 9;
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding-right: 10px;
+}
+.tab::-webkit-scrollbar{/*整个滚动条  https://m.php.cn/article/480425.html*/
+    width: 0px;
+	height: 0px;
+    background-color: rgb(199, 199, 199);
+}
+.app_box{
+	position: fixed;
+}
+.app_item{
+	padding:0 1em;
+	line-height:var(--tab-height);
+	box-sizing: border-box;
+	color: #fff;
+	border-bottom: 2px inset #ffbb29;
+	cursor: default;
+	user-select: none;
+	margin:0 10px;
+	transition: padding 0.1s, margin 0.1s;
+}
+.app_item:hover{
+	background-color: rgba(240, 240, 240, 0.2);
+	margin:0;
+	padding:0 calc( 1em + 10px );
+}
+.app_item:active{
+	background-color: rgba(240, 240, 240, 0.4);
+}
+.active_app{
+	background-color: rgba(240, 240, 240, 0.5);
+	margin:0;
+	padding:0 calc( 1em + 10px );
+}
+.app{
+	width: 80px;
+	height: calc( 60px + var(--line-height) *2 + 8px);
+	margin: 10px;
+	box-sizing: border-box;
+	position: relative;
+
+}
+.box{
+	width: 80px;
+	height: 100%;
+	padding: 4px 0;
+	box-sizing: border-box;
+
+}
+.icon{
+	width: 60px;
+	height: 60px;
+	margin: 0 auto;
+	display: flex;
+    align-items: center;
+    justify-content: center;
+	filter: drop-shadow(1px 1px 1px #fff);
+}
+.name{
+	width: 100%;
+	height: calc(var(--line-height) * 2);
+	line-height: var(--line-height);
+	text-align: center;
+	font-size: var(--size);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	-webkit-line-clamp: 2; 
+	display: -webkit-box; 
+	-webkit-box-orient: vertical; 
+    color: #fff;
+	cursor: default;
+	text-shadow: 1px 1px #000;
+	user-select: none;
+	resize: none;
+	word-break: break-word;
+}
+.name:focus{
+	min-width: 2em;
+	margin:  0 auto;
+	outline: dotted 1px #000000;
+	background-color: #fff;
+	color: #000;
+	width: fit-content;
+	height: auto !important;
+	text-shadow: none;
+	max-width: 100%;
+	-webkit-line-clamp: unset; 
+	overflow:unset;
+	position: relative;
+	z-index: 20;
+}
+.editName{
+	cursor: text;
+}
+.app:focus .box{
+	height: auto;
+	outline: dotted 2px #ffbb29;
+	background-color: rgba(255, 255, 255, 0.205);
+	position: relative;
+	z-index: 1;
+}
+.app:focus .name{
+	height: auto;
+	display:block; 
+}

@@ -51,6 +51,7 @@ watchEffect(()=>{
 	history.push(tempPath.value=props.path)
 })
 function open(file){
+	file.open()
 	if(file.isFolder){
 		history.splice(index.value+1,history.length)
 		history.push(file.path)
@@ -117,10 +118,10 @@ function find(){
 			<input type="text" class="searchKeyword" v-model="searchKeyword" placeholder="搜索" @keydown.enter="find">
 		</div>
 		<div class="body">
-			<div v-for="file in dir" @click="open(file)" :key="file.name">
+			<div v-for="file in dir" @dblclick="open(file)" :key="file.name">
 				<template v-if="file.isRoot">
 					<div class="root_dir" v-if="file.isFolder">
-						<div class="root_dir_name">{{file.name}}{{ file.pwd }}
+						<div class="root_dir_name">{{file.title}}({{file.name}}{{ file.pwd }})
 						</div>
 					</div>
 				</template>

@@ -59,7 +59,6 @@ const style=computed(()=>{
 	let top=""
 	if(width>elWidth){
 		if(x<viewInElWidth){//位置小于屏幕宽度-元素宽度
-			console.log("11:",width,elWidth);
 			result.x=x
 		}else{
 			console.log("22:",22);
