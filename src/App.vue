@@ -5,12 +5,12 @@ import "./App.js"//初始化一些东西
 const desktopStart=ref(false)
 setTimeout(()=>{
 	desktopStart.value=true
-},1000)
+},100)
 </script>
 
 <template>
 	<system-desktop  v-if="desktopStart" ></system-desktop>
-	<div v-cloak class="d">
+	<div v-cloak class="d pageLoading">
 		加载中
 	</div>
 </template>

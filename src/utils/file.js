@@ -1,7 +1,8 @@
+import { reactive } from "vue";
 
 const config=(await (await fetch("/config/index.json")).json())
-console.log(config);
-class path {
+
+export class path {
 	static join(...paths){
 		let fullPath = paths.join('/');
 
@@ -29,7 +30,93 @@ class path {
 		return fullPath;
 	}
 }
+export const fileUidList=reactive({})
+export const filePathList=reactive({})
+export function findFile(param_path){
+	return Object.values(fileUidList).find(i=>i.path===param_path)
+}
+// const obj={}
+// function uidToPath(){
+// 	for (const file of fileUidList) {
+// 		obj[file.path] = file
+// 	}
+// 	return obj
+// }
+export function findPath(param_path){
+	const path_key=param_path.split("/")
+	const name=path_key[path_key.length-1]
+	const isfile=isFile(name);
+	let file=filePathList[param_path];
+	if(!file){
+		//文件不存在去浏览器查查
+		const fileContent=localStorage.getItem(param_path)//内容
+		if(fileContent===null) return 
+		file=createFile(path_key.slice(0,path_key.length-1).join("/"),name,name,!isfile,fileContent)
+	}
+	return file
+}
 
+const isFileREX=new RegExp("\\.")
+function isFile(str){
+	return isFileREX.test(str)
+}
+export function loadFindPathSync(param_path){
+	if(param_path){
+		const keyList=param_path.split(/[:|/]/).filter(Boolean)
+		let temp_path=`${keyList[0]}:`
+		let loadFile=findFile(temp_path)
+		let i=1
+		function load(){
+			if(loadFile&&keyList[i]){
+				return 
+			}
+			loadFile.loadSync()
+			temp_path=path.join(temp_path,keyList[i++])
+			loadFile=findFile(temp_path)
+			load()
+		}
+		load()
+	}
+}
+export function loadFindPath(param_path){
+	return new Promise(r=>{
+		if(param_path){
+			const keyList=param_path.split(/[:|/]/).filter(Boolean)
+			let temp_path=`${keyList[0]}:`
+			let loadFile=findFile(temp_path)
+			let i=1
+			function load(){
+				if(!keyList[i]){
+					r()
+					return 
+				}
+				loadFile.load().then(()=>{
+					temp_path=path.join(temp_path,keyList[i++])
+					loadFile=findFile(temp_path)
+					load()
+				})
+			}
+			load()
+		}
+	})
+}
+export function uid(separator="-"){
+	if(!crypto&&crypto.randomUUID){
+		return crypto.randomUUID();
+	}else{
+		const str="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		const arr=[]
+		for (let index = 0; index < 3; index++) {
+			const a=[]
+			for (let i = 0; i < 4; i++) {
+				a.push(str[Math.floor(Math.random()*52)])
+			}
+			arr.push(a.join(""))
+		}
+		const t=(Date.now()+"").slice(-5)+separator+(Math.random()+"").slice(-5)
+		return arr.join(separator)+separator+t
+	}
+}
 class File {
 	/**
 	 * 
@@ -50,6 +137,7 @@ class File {
 		this.isRoot=false//是否是根目录
 		this.pwd=pwd
 		this.isLoad=isLoad
+		this.uid=uid()
 		Object.assign(this,attr)
 		this.path=path.join(pwd,name+this.extension)
 		if(!this.content){
@@ -72,17 +160,20 @@ class File {
 	}
 	load(){
 		return new Promise(r=>{
-			if(this.isFolder){
-				let pwd=this.path
-				let keys=JSON.parse(localStorage.getItem(`[${pwd}]`))||[]
-				this.content=keys.map(key=>{
-					const temp_path=pwd
-					return new File(temp_path,key,key,/\./.test(key)?false:true,localStorage.getItem(path.join(temp_path,key)))
-				})
-			}else{
-				this.content=localStorage.getItem(this.path)
-			}
-			r(this.content)
+			setTimeout(() => {
+				this.isLoad=true
+				if(this.isFolder){
+					let pwd=this.path
+					let keys=JSON.parse(localStorage.getItem(`[${pwd}]`))||[]
+					this.content=keys.map(key=>{
+						const temp_path=pwd
+						return createFile(temp_path,key,key,!isFile(key),localStorage.getItem(path.join(temp_path,key)))
+					})
+				}else{
+					this.content=localStorage.getItem(this.path)
+				}
+				r(this.content)
+			}, 0);
 		})
 	}
 	open() {
@@ -90,12 +181,13 @@ class File {
 	}
 	
 	loadSync(){
+		this.isLoad=true
 		if(this.isFolder){
 			let pwd=this.path
 			let keys=JSON.parse(localStorage.getItem(`[${pwd}]`))||[]
 			this.content=keys.map(key=>{
 				const temp_path=pwd
-				return new File(temp_path,key,key,/\./.test(key)?false:true,localStorage.getItem(path.join(temp_path,key)))
+				return createFile(temp_path,key,key,!isFile(key),localStorage.getItem(path.join(temp_path,key)))
 			})
 		}else{
 			this.content=localStorage.getItem(this.path)
@@ -111,16 +203,16 @@ function loadFile(pwd,filter){
 
 	}
 }
-function loadSystemFile(){
+export function loadSystemFile(){
 	const fileConfig=config.file
-	return fileConfig.map(i=>{
+	return reactive(fileConfig.map(i=>{
 		return createFile(i.pwd,i.title,"",true,[],{isRoot:true},false)
-	})
+	}))
 }
 
 function createFile(pwd,title, name, isFolder = false, content = null,  attr = {},isLoad=false){
-	const file=new File(pwd,title, name, isFolder, content,  attr,isLoad)
-	
+	const file=reactive(new File(pwd,title,name,isFolder,content,attr,isLoad))
+	filePathList[file.path]=fileUidList[file.uid]=file
 	return file
 }
 function init(){
@@ -129,7 +221,8 @@ function init(){
 	localStorage.setItem("[C:B]",'["F"]')
 	localStorage.setItem("[D:]",'["B"]')
 	localStorage.setItem("[D:B]",'["F","ARR","ARR.txt"]')
-	localStorage.setItem("C:A","A")
+	localStorage.setItem("[D:B/ARR]",'["A.1","A"]')
+	localStorage.setItem("C:A","")
 	localStorage.setItem("C:A/1.txt","文字")
 	localStorage.setItem("C:1.txt","文字")
 	localStorage.setItem("C:A/B","B")
@@ -139,11 +232,9 @@ function init(){
 	localStorage.setItem("D:B","B")
 	localStorage.setItem("D:B/F","")
 	localStorage.setItem("D:B/ARR","")
+	localStorage.setItem("D:B/ARR/A.1","1")
+	localStorage.setItem("D:B/ARR/A","")
 	localStorage.setItem("D:B/ARR.txt","2222")
 	console.table(localStorage)
 }
 init()
-
-export {
-	loadSystemFile
-}

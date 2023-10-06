@@ -94,6 +94,7 @@ export function findFile(systemDirectory,path){
 		return cacheValue
 	}
 	function findArr(arr){
+		console.log("arr:",arr);
 		return arr.some(file=>{
 			if(file.path===path){
 				tempCache[path]=result=file

@@ -2,7 +2,7 @@ import { openApp,File} from "./utils";
 import {createProgress,progressList} from "./hooks/system"
 import Explorer from "./components/explorer/explorer.vue";
 import Notepad from "./components/notepad/notepad.vue";
-import { loadSystemFile } from "./utils/file";
+import { loadSystemFile ,loadFindPath,findFile, loadFindPathSync,findPath} from "./utils/file";
 import "@/utils/file.js"
 let systemDirectory=[
 	new File("","C:",true,[
@@ -26,7 +26,14 @@ let systemDirectory=[
 	])
 ]
 systemDirectory=loadSystemFile()
-console.log("systemDirectory:",systemDirectory);
+
+// let param_path="D:B/ARR"
+// loadFindPathSync(param_path)
+// console.log("findFile(param_path):",findFile(param_path));
+// console.log("findPath(param_path):",findPath(param_path));
+
+// console.log("systemDirectory:",systemDirectory);
+
 // openApp(0,"E:")
 // openApp(0,"E:")
 // openApp(0,"E:/文件夹1")
