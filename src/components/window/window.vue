@@ -10,7 +10,11 @@ const props=defineProps({
 	pid:{
 		type:Number,
 		default:0
-	}
+	},
+	title:{
+		type:String,
+		default:""
+	},
 })
 const count=showCount()
 const emits=defineEmits([])
@@ -105,7 +109,7 @@ onUnmounted(()=>{
 
 <template>
 	<div :tabindex="winInfo.pid" class="win" ref="win" v-show="winInfo.z>-1" :class="{max:windowState.isMax}" :style="{left:windowState.x+'px',top:windowState.y+'px',zIndex:winInfo.z,width:windowState.w+'%',height:`calc( ${windowState.h}% - var(--tab-height) )`}" @mousedown="activeApp">
-		<div class="header" ref="winMove" v-move="windowState" @move="move">
+		<div :title="title" class="header" ref="winMove" v-move="windowState" @move="move">
 			<div style="pointer-events: none;">
 				<slot name="title"></slot>
 			</div>
@@ -140,6 +144,7 @@ onUnmounted(()=>{
 	z-index: 8;
 }
 .win{
+	transition: z-index 0.3s ease;
 	position: fixed;
 	background-color: rgb(255, 255, 255);
 	z-index: 2;

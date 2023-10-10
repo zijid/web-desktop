@@ -1,0 +1,34 @@
+{
+	"bg":{
+		"img":"/bg53k.jpg"
+	},
+	"file":[
+		{
+			"pwd":"C:",
+			"title":"系统"
+		},
+		{
+			"pwd":"D:",
+			"title":"软件"
+		},
+		{
+			"pwd":"E:",
+			"title":"数据"
+		}
+	],
+	"menu":[
+		{
+			"postfix":".exe",
+			"ments":[
+				{
+					"title":"打开",
+					"hander":"exe"
+				},
+				{
+					"title":"重命名",
+					"hander":"rename"
+				}
+			]
+		}
+	]
+}

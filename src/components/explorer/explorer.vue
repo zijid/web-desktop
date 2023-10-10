@@ -1,9 +1,9 @@
 <script setup>
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
 import {systemDirectory} from "../../App"
-import { findFile } from "../../utils";
+// import { findFile } from "../../utils";
+import { findFile,loadFindPath} from "../../utils/file";
 import Win from "../window/window.vue";
-
 const props=defineProps({
 	path:{
 		type:String,
@@ -34,15 +34,16 @@ const dir=computed(()=>{
 	if(!tempPath.value){
 		return systemDirectory
 	}else{
-		const file=findFile(systemDirectory,tempPath.value)
+		const file=findFile(tempPath.value)
 		if(file){
-			return file.content
+			return file.content||[]
 		}else{
-			return []
+			return null
 		}
 		 
 	}
 })
+const isLoad=ref(false)
 const index=ref(0)
 watch(()=>tempPath.value,()=>{
 	search.value=tempPath.value
@@ -50,7 +51,13 @@ watch(()=>tempPath.value,()=>{
 watchEffect(()=>{
 	history.push(tempPath.value=props.path)
 })
+const temp_file=ref({})
 function open(file){
+
+	temp_file.value.isLoad=file.isLoad
+	file.open().then(r=>{
+		temp_file.value.isLoad=file.isLoad
+	})
 	if(file.isFolder){
 		history.splice(index.value+1,history.length)
 		history.push(file.path)
@@ -66,29 +73,44 @@ function move(i){
 	// explorer.value.focus()
 }
 function skip(){
-	const file=findFile(systemDirectory,search.value)
-	if(tempPath.value===search.value){
+	let search_str=search.value
+	if(search.value.endsWith("/")){
+		search_str=search.value.slice(0,-1)
+	}
+	if(tempPath.value===search_str){
 		return
 	}
-	if(file){
-		if(file.isFolder){
-			history.splice(index.value+1,history.length)
-			history.push(file.path)
-			index.value=history.length-1
-			tempPath.value=search.value
+	isLoad.value=true
+	temp_file.value.isLoad=false
+	loadFindPath(search_str).then(r=>{
+		const file=findFile(search_str)
+		if(file){
+			file.load().then(()=>{
+				isLoad.value=false
+				temp_file.value.isLoad=file.isLoad
+				if(file.isFolder){
+					history.splice(index.value+1,history.length)
+					history.push(file.path)
+					index.value=history.length-1
+					
+					tempPath.value=search_str
+				}else{
+					alert("打开"+file.name)
+				}
+			})
 		}else{
-			alert("打开"+file.name)
+			isLoad.value=false
+			temp_file.value.isLoad=true
+			if(!file&&search_str){
+				alert("没有找到文件或文件夹")
+			}else{
+				history.splice(index.value+1,history.length)
+				history.push("")
+				index.value=history.length-1
+				tempPath.value=""
+			}
 		}
-	}else{
-		if(search.value){
-			alert("没有找到文件或文件夹")
-		}else{
-			history.splice(index.value+1,history.length)
-			history.push("")
-			index.value=history.length-1
-			tempPath.value=""
-		}
-	}
+	})
 }
 function find(){
 	alert("搜索未制作")
@@ -103,36 +125,50 @@ function find(){
 	<div class="explorer">
 		<div class="function">
 			<div class="history">
-				<button class="after" @click="move(-1)" :disabled="index==0">
+				<button class="after"
+				@click="move(-1)"
+				:disabled="index==0" title="后退">
 					←
 				</button>
-				<button class="before" @click="move(1)" :disabled="index===history.length-1">
+				<button class="before"
+				@click="move(1)"
+				:disabled="index===history.length-1"
+				title="前进">
 					→
 				</button>
 			</div>
-			<input type="text" class="search" v-model="search" @keydown.enter="skip">
-			<div class="skip" @click="skip">
+			<input type="text" class="search"
+			v-model="search"
+			title="搜索"
+			@keydown.enter="skip">
+			<div class="skip" @click="skip"
+			title="搜索">
 				→
 			</div>
-			<input type="text" class="searchKeyword" v-model="searchKeyword" placeholder="搜索" @keydown.enter="find">
+			<input type="text" class="searchKeyword" v-model="searchKeyword"
+			placeholder="搜索"
+			title="搜索"
+			@keydown.enter="find">
 		</div>
 		<div class="body">
-			<div v-for="file in dir" @click="open(file)" :key="file.name">
+			<div class="loading d" v-if="isLoad||temp_file.isLoad===false&&dir&&dir.length===0">加载中</div>
+			<template class="dir_box" v-for="file in dir" :key="file.uid">
 				<template v-if="file.isRoot">
-					<div class="root_dir" v-if="file.isFolder">
-						<div class="root_dir_name">{{file.name}}{{ file.pwd }}
+					<div class="root_dir" v-if="file.isFolder" @dblclick="open(file)" >
+						<div class="root_dir_name">{{file.title}}({{file.name}}{{ file.pwd }})
 						</div>
 					</div>
 				</template>
-				<div class="dir_file" v-else-if="file.isFolder">
+				<div class="dir_file" v-else-if="file.isFolder" @dblclick="open(file)" >
+					<div class="name">{{file.name}}</div>
+				</div>
+				<div class="dir_file" v-else @dblclick="open(file)" >
 					<div class="name">{{file.name}}
 					</div>
 				</div>
-				<div class="dir_file" v-else>
-					<div class="name">{{file.name}}
-					</div>
-				</div>
-			</div>
+			</template>
+			<div v-show="temp_file.isLoad===true&&dir&&dir.length===0" class="no_dir_content">空文件夹</div>
+			<div v-show="dir===null" class="no_dir_content">不存在这个文件或文件夹</div>
 		</div>
 	</div>
 </Win>
@@ -191,6 +227,7 @@ function find(){
 	display: flex;
 	flex-direction: column;
 	user-select: none;
+	height: 100%;
 }
 .header{
 	cursor: move;
@@ -251,10 +288,12 @@ function find(){
 	flex-wrap: wrap;
 	align-content: flex-start;
 	overflow: auto;
+	height: calc( 100% - 2.8em);
 }
-.body>*{
-	border: 1px solid #000;
-    padding: 1em;
+.body .dir_box{
+}
+.no_dir_content{
+	padding: 1em 0 0 1em;
 }
 .root_dir{
 	width: 10em;
@@ -270,8 +309,11 @@ function find(){
 	white-space: nowrap;
 }
 .dir_file{
-	width: 10em;
-
+    width: 100%;
+    padding: 0.5em;
+}
+.dir_file:hover{
+	background-color: rgb(174 228 253);
 }
 .name{
 	width: 100%;
@@ -341,5 +383,10 @@ function find(){
 }
 .search:focus,.searchKeyword:focus{
 	border-color: rgb(0, 68, 255);
+}
+.loading{
+	width: 100%;
+    padding-top: 20%;
+	text-align: center;
 }
 </style>
