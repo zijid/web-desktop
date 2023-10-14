@@ -2,7 +2,7 @@
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
 import {systemDirectory} from "../../App"
 // import { findFile } from "../../utils";
-import { findFile,loadFindPath} from "../../utils/file";
+import { findFile,loadFindPath} from "../../utils/fileOld";
 import Win from "../window/window.vue";
 const props=defineProps({
 	path:{
