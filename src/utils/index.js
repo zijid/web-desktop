@@ -1,4 +1,4 @@
-import { openAppList } from "../hooks";
+import { openAppList } from "@/hooks";
 class path {
 	static join(...paths){
 		let fullPath = paths.join('/');
@@ -25,7 +25,6 @@ class path {
 		return fullPath;
 	}
 }
-
 class File {
 	/**
 	 * 
@@ -112,3 +111,17 @@ export function findFile(systemDirectory,path){
 	findArr(systemDirectory)
 	return result
 }
+export class Bus {  
+	constructor() {  
+	  this.callbacks = {};   // 存放事件的名字  
+	}  
+	on(name, fn) {  
+	  this.callbacks[name] = this.callbacks[name] || [];  
+	  this.callbacks[name].push(fn);  
+	}  
+	emit(name, args) {  
+	  if (this.callbacks[name]) {  
+		this.callbacks[name].forEach((cb) => cb(args));  
+	  }  
+	}  
+} 

@@ -2,8 +2,10 @@
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
 import {systemDirectory} from "../../App"
 // import { findFile } from "../../utils";
-import { findFile,loadFindPath} from "../../utils/fileOld";
+// import { findFile,loadFindPath} from "../../utils/fileOld";
+import {readFileAll,readFile} from "@/utils/file"
 import Win from "../window/window.vue";
+import {Message} from "zijid-ui"
 const props=defineProps({
 	path:{
 		type:String,
@@ -30,41 +32,64 @@ const searchKeyword=ref("")
 const tempPath=ref("")
 const history=[]
 const explorer=ref(null)
-const dir=computed(()=>{
-	if(!tempPath.value){
-		return systemDirectory
-	}else{
-		const file=findFile(tempPath.value)
-		if(file){
-			return file.content||[]
-		}else{
-			return null
-		}
+const dir=ref(systemDirectory)
+// const dir=computed(()=>{
+// 	console.log(`222222222systemDirectory:`,systemDirectory);
+// 	return systemDirectory
+// 	if(!tempPath.value){
+// 		return systemDirectory
+// 	}else{
+// 		const file=findFile(tempPath.value)
+// 		if(file){
+// 			return file.content||[]
+// 		}else{
+// 			return null
+// 		}
 		 
-	}
-})
+// 	}
+// })
 const isLoad=ref(false)
 const index=ref(0)
 watch(()=>tempPath.value,()=>{
 	search.value=tempPath.value
+	isLoad.value=true
+	const str=search.value||'/'
+	console.log(`str:`,str);
+	if(str==='/'){
+		isLoad.value=false
+		dir.value=systemDirectory
+	}else{
+		readFileAll(str).then(res=>{
+			console.log(`res:`,res,str);
+			if(res.length===0||res[0]&&res[0].pwd===search.value){
+				isLoad.value=false
+				dir.value=res
+			}
+		})
+	}
+})
+let t
+watch(()=>search.value,()=>{
+	clearTimeout(t)
+	t=setTimeout(()=>{
+	},100)
 })
 watchEffect(()=>{
 	history.push(tempPath.value=props.path)
 })
 const temp_file=ref({})
 function open(file){
-
-	temp_file.value.isLoad=file.isLoad
-	file.open().then(r=>{
-		temp_file.value.isLoad=file.isLoad
-	})
-	if(file.isFolder){
+	console.log(`file:`,file);
+	if(file.type==="WebDir"){
 		history.splice(index.value+1,history.length)
 		history.push(file.path)
 		tempPath.value=file.path
 		index.value=history.length-1
 	}else{
-		alert("打开"+file.name)
+		file.read().then(r=>{
+			console.log(`txt r:`,r);
+			Message('文件内容:'+r)
+		})
 	}
 }
 function move(i){
@@ -72,45 +97,56 @@ function move(i){
 	tempPath.value=history[index.value]
 	// explorer.value.focus()
 }
+
 function skip(){
 	let search_str=search.value
-	if(search.value.endsWith("/")){
-		search_str=search.value.slice(0,-1)
-	}
 	if(tempPath.value===search_str){
 		return
 	}
 	isLoad.value=true
-	temp_file.value.isLoad=false
-	loadFindPath(search_str).then(r=>{
-		const file=findFile(search_str)
-		if(file){
-			file.load().then(()=>{
-				isLoad.value=false
-				temp_file.value.isLoad=file.isLoad
-				if(file.isFolder){
-					history.splice(index.value+1,history.length)
-					history.push(file.path)
-					index.value=history.length-1
-					
-					tempPath.value=search_str
-				}else{
-					alert("打开"+file.name)
-				}
-			})
+	readFile(search_str).then(file=>{
+		isLoad.value=false
+		if(file.type==="WebDir"){
+			history.splice(index.value+1,history.length)
+			history.push(file.path)
+			index.value=history.length-1
+			tempPath.value=search_str
 		}else{
-			isLoad.value=false
-			temp_file.value.isLoad=true
-			if(!file&&search_str){
-				alert("没有找到文件或文件夹")
-			}else{
-				history.splice(index.value+1,history.length)
-				history.push("")
-				index.value=history.length-1
-				tempPath.value=""
-			}
+			file.read().then(r=>{
+				Message('文件内容:'+r)
+			})
+			alert("打开"+file.name)
 		}
 	})
+	// readFileAll(search_str).then(r=>{
+	// 	const file=findFile(search_str)
+	// 	if(file){
+	// 		file.load().then(()=>{
+	// 			isLoad.value=false
+	// 			temp_file.value.isLoad=file.isLoad
+	// 			if(file.isFolder){
+	// 				history.splice(index.value+1,history.length)
+	// 				history.push(file.path)
+	// 				index.value=history.length-1
+					
+	// 				tempPath.value=search_str
+	// 			}else{
+	// 				alert("打开"+file.name)
+	// 			}
+	// 		})
+	// 	}else{
+	// 		isLoad.value=false
+	// 		temp_file.value.isLoad=true
+	// 		if(!file&&search_str){
+	// 			alert("没有找到文件或文件夹")
+	// 		}else{
+	// 			history.splice(index.value+1,history.length)
+	// 			history.push("")
+	// 			index.value=history.length-1
+	// 			tempPath.value=""
+	// 		}
+	// 	}
+	// })
 }
 function find(){
 	alert("搜索未制作")
@@ -151,24 +187,31 @@ function find(){
 			@keydown.enter="find">
 		</div>
 		<div class="body">
-			<div class="loading d" v-if="isLoad||temp_file.isLoad===false&&dir&&dir.length===0">加载中</div>
-			<template class="dir_box" v-for="file in dir" :key="file.uid">
-				<template v-if="file.isRoot">
-					<div class="root_dir" v-if="file.isFolder" @dblclick="open(file)" >
-						<div class="root_dir_name">{{file.title}}({{file.name}}{{ file.pwd }})
+			<div class="loading d" v-if="isLoad===true">加载中</div>
+			<template v-else>
+				<template class="dir_box" v-for="file in dir" :key="file.uid">
+					<div :class="[file.system?'root_dir':'dir_file']" v-if="file.type==='WebDir'" @dblclick="open(file)" >
+						<div style="font-size: 24px;">
+							<zi-icon name="user" v-if="file.system"></zi-icon>
+							<zi-icon name="folder-close" v-else></zi-icon>
+						</div>
+						<div class="root_dir_name">
+							{{file.nickname}}
+							<template v-if="file.system">({{file.name}})</template>
+						</div>
+					</div>
+					<div class="dir_file" v-else @dblclick="open(file)" >
+						<div style="font-size: 24px;">
+							<zi-icon name="file"></zi-icon>
+						</div>
+						<div class="name">
+							{{file.name}}
 						</div>
 					</div>
 				</template>
-				<div class="dir_file" v-else-if="file.isFolder" @dblclick="open(file)" >
-					<div class="name">{{file.name}}</div>
-				</div>
-				<div class="dir_file" v-else @dblclick="open(file)" >
-					<div class="name">{{file.name}}
-					</div>
-				</div>
 			</template>
-			<div v-show="temp_file.isLoad===true&&dir&&dir.length===0" class="no_dir_content">空文件夹</div>
-			<div v-show="dir===null" class="no_dir_content">不存在这个文件或文件夹</div>
+			<div v-show="isLoad===false&&dir.length===0" class="no_dir_content">空文件夹</div>
+			<div v-show="isLoad===false&&dir===null" class="no_dir_content">不存在这个文件或文件夹</div>
 		</div>
 	</div>
 </Win>
@@ -298,9 +341,12 @@ function find(){
 .root_dir{
 	width: 10em;
 	height: 2em;
-	border:1px solid #000;
 	margin-right:1em;
 	padding: 0.5em;
+	border:1px solid #000;
+	display: flex;
+	flex-direction: row;
+    align-items: center;
 }
 .root_dir_name{
 	width: 100%;
@@ -311,6 +357,9 @@ function find(){
 .dir_file{
     width: 100%;
     padding: 0.5em;
+	display: flex;
+	flex-direction: row;
+    align-items: center;
 }
 .dir_file:hover{
 	background-color: rgb(174 228 253);

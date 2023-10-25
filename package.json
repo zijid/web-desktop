@@ -6,6 +6,7 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "vite build",
+		"link-ui":"npm link zijid-ui",
 		"preview": "vite preview",
 		"github": "git add .&git commit -m '1.0'&git push https://github.com/zijid/web-desktop.git"
 	},

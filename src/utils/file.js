@@ -1,4 +1,4 @@
-import {IndexedDB} from "zijid-ui"
+import {IndexedDB,utils} from "zijid-ui"
 const config=(await (await fetch("/config/index.json")).json())
 const db = new IndexedDB("web-desktop")
 const tableName="web-desktop-table"
@@ -40,6 +40,7 @@ function dbToFile(params){
 	}
 }
 class FilesystemObject{
+	uid=utils.uid()
 	async write(txt){
 		return this.content=txt
 	}
@@ -119,6 +120,7 @@ class WebFile extends FilesystemObject{
 	async read(){
 		const file=await this._read()
 		this.content=file.content
+		console.log(`this.content:`,this.content);
 		return this.content
 	}
 	set pwd(value){
@@ -135,7 +137,8 @@ class WebDir extends FilesystemObject{
 	path=""
 	nickname=""
 	type="WebDir"
-	constructor(pwd,name,nickname=name){
+	system=false
+	constructor(pwd,name,nickname=name,system=false){
 		if (!pwd||!name){
 			throw createFileError(`创建文件夹失败，无路径或文件夹名:pwd:${pwd} name:${name}`);
 		}
@@ -144,6 +147,7 @@ class WebDir extends FilesystemObject{
 		this.pwd=pwd
 		this.nickname=nickname
 		this.content=null
+		this.system=system
 	}
 
 	async read(){
@@ -166,53 +170,58 @@ export {
 	WebFile,
 	WebDir
 }
-{
-	let a=new WebDir("/D","TT")
-	a.save()
-	setTimeout(async ()=>{
-		console.log(`a:`,a);
-		console.log(`await a.read("atttttttttttaa222a"):`,await a.read("atttttttttttaa222a"));
-	},1000)
-}
-{
-	let a=new WebDir("/D/TT","22222name.txt")
-	a.save()
-}
-{
-	let a=new WebFile("/D","2name.txt")
-	a.save()
-	a.read()
-	a.write("aaaa")
-	setTimeout(async ()=>{
-		await a.write("atttttttttttaa222a")
-	},3000)
-}
-{
-	let a=new WebFile("/D","3name.txt")
-	a.read()
-	a.write("aaaa")
-	setTimeout(async ()=>{
+// {
+// 	let a=new WebDir("/D","TT")
+// 	a.save()
+// 	setTimeout(async ()=>{
+// 		console.log(`a:`,a);
+// 		console.log(`await a.read("atttttttttttaa222a"):`,await a.read("atttttttttttaa222a"));
+// 	},1000)
+// }
+// {
+// 	let a=new WebDir("/D/TT","22222name.txt")
+// 	a.save()
+// }
+// {
+// 	let a=new WebFile("/D","2name.txt")
+// 	a.save()
+// 	a.read()
+// 	a.write("aaaa")
+// 	setTimeout(async ()=>{
+// 		await a.write("atttttttttttaa222a")
+// 	},3000)
+// }
+// {
+// 	let a=new WebFile("/D","3name.txt")
+// 	a.read()
+// 	a.write("sssssss")
+// 	setTimeout(async ()=>{
 		
-		await a.write("atttttttttttaa222a")
-	},3000)
-}
-{
-	let a=new WebDir("/","D")
-	console.log(`+++++++++++++:`,	await a.read());
-}
+// 		await a.write("atttttttttttaa222a")
+// 	},3000)
+// }
+// {
+// 	let a=new WebDir("/","D")
+// 	console.log(`+++++++++++++:`,	await a.read());
+// }
 export function loadSystemFile(){
 	const fileConfig=config.file
 	return fileConfig.map(i=>{
-		return new WebFile(i.pwd,"C",i.title)
+		return new WebDir(i.pwd,i.name,i.title,true)
 	})
 }
 export async function readFileAll(path){//这里的path对应需要获取的文件的pwd
 	const fileList=await db.findIndexAll(tableName,"pwd",path)
-	return fileList.map(i=>{
-		const file=new WebFile(i.pwd,i.name)
-		file.content = i.content
-		return file
+	return fileList.map(dbToFile)
+}
+export async function readFile(path){//这里的path对应需要获取的文件的pwd
+	const dbFile=await _readFile(path)
+	return dbToFile(dbFile)
+}
+function sleep(time){
+	return new Promise(r=>{
+		setTimeout(()=>{
+			r()
+		},time)
 	})
 }
-
-console.log(`loadSystemFile():`,loadSystemFile());
