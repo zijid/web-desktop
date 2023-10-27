@@ -6,7 +6,6 @@ body{
 	position: fixed;
 }
 .desktop{
-	background-image: url(/bg53k.jpg);
 	background-repeat: round;
 }
 [v-cloak] {

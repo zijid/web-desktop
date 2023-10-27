@@ -16,8 +16,13 @@ const props=defineProps({
 	// 	default:false
 	// }
 })
+const position=reactive({
+	x:0,y:0
+})
 const show=ref(false)
-bus.on("menu-show",()=>{
+bus.on("menu-show",({x,y})=>{
+	position.x=x
+	position.y=y
 	show.value=true
 })
 bus.on("menu-close",()=>{
@@ -26,11 +31,11 @@ bus.on("menu-close",()=>{
 const emits=defineEmits([])
 const elInfo=reactive({
 	width:0,height:0,
-	x:props.position.x,
-	y:props.position.y
+	x:position.x,
+	y:position.y
 })
 const el=ref(null)
-watch(()=>props.position,(e)=>{
+watch(()=>position,(e)=>{
 	setPos()
 },{deep:true,immediate:true})
 async function setPos(){
@@ -42,8 +47,8 @@ async function setPos(){
 	
 	elInfo.width=el.value.offsetWidth;
 	elInfo.height=el.value.offsetHeight;
-	const p_x=props.position.x;
-	const p_y=props.position.y;
+	const p_x=position.x;
+	const p_y=position.y;
 	const elRightPos=p_x+elInfo.width;
 	const elBottomPos=p_y+elInfo.height;
 	const x_max=window.innerWidth

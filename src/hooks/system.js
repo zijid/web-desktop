@@ -1,8 +1,10 @@
-//进程管理
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick,markRaw} from "vue";
+import {bus} from "@/App"
 export const progressList=reactive([])
 export const activeAppPid=ref(null)
-
+let arr=[]
+export const windowList=reactive([])
+let pid=0
 export function createProgress(title,exec,pwd,targetPath,args=""){
 	/*
 	文件名字
@@ -29,10 +31,6 @@ export function activateProgress(pid){
 export function findProgress(pid){
 	return progressList.find(i=>i.pid===pid)
 }
-//窗口管理
-let arr=[]
-export const windowList=reactive([])
-let pid=0
 export function getPid() {
 	return pid++
 }
@@ -46,7 +44,7 @@ export function createWindow(pid){//名字，pid，运行程序
 		exec:progress.exec,
 		z:windowList.length+1
 	})
-	let index=windowList.push(win)
+	windowList.push(win)
 	return win
 }
 export function closeWindow(pid){//名字，pid，运行程序

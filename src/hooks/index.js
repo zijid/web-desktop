@@ -1,8 +1,16 @@
 import {ref,reactive,markRaw} from "vue"
 import { FUNCTION } from "@/utils/types";
 import {createProgress} from "./system"
-import {exec}from "@/App.js"
-export const data=reactive([])
+import {exec,bus}from "@/App.js"
+export const data=[]
+
+// try{
+// 	bus.on("get:app",()=>{
+// 		bus.emit("update:app",data)
+// 	})
+// }catch(err){
+// 	console.log(`err:`,err);
+// }
 export function addApp(appName,titleTemp,path,targetPath,args){
 	// let icon=`<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 9V41L9 21H39.5V15C39.5 13.8954 38.6046 13 37.5 13H24L19 7H6C4.89543 7 4 7.89543 4 9Z" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M40 41L44 21H8.8125L4 41H40Z" fill="none" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`
 	// if(type===FUNCTION){
@@ -30,6 +38,7 @@ export function addApp(appName,titleTemp,path,targetPath,args){
 			},
 		]
 	})
+	bus.emit("update:app",data)
 	return data[data.length-1]
 }
 // title,exec,pwd,targetPath,args

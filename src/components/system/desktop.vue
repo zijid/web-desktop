@@ -1,14 +1,21 @@
 <script setup>
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick,defineAsyncComponent} from "vue";
 import Menu from "@/components/system/menu/menu.vue";
-import { addApp,data ,openAppList} from "@/hooks";
-import {createProgress,progressList,showWindow,activeAppPid,windowList,showDesktop,showCount} from "@/hooks/system"
-import { FUNCTION,DIR } from "@/utils/types";
+import {createProgress,progressList,showWindow,activeAppPid,windowList,showDesktop} from "@/hooks/system"
 import { exec,bus} from "@/App"
-
-addApp("explorer","文件管理器","","","")
-addApp("notepad","文本文件1","","E:/文本文件1.txt","")
-addApp("notepad","文本文件3","","E:/文件夹1/文本文件3.txt","")
+import { addApp,openAppList,data} from "@/hooks";
+import {init,getConfig} from "@/system"
+await init()
+const config=getConfig()
+console.log(`config:`,config);
+const appList=ref([...data])
+const bg=ref("")
+onMounted(()=>{
+	bg.value=config.bg.base64||config.bg.url
+	bus.on("update:app",(apps)=>{
+		appList.value=[...apps]
+	})
+})
 
 const vSelect = {
 	mounted: (el) => {
@@ -28,15 +35,13 @@ const vSelect = {
 	}
 }
 const item=ref({})
-const position=reactive({
-	x:11110,y:111110
-})
 let title=ref("")
 function showMenu(e,i){
-	console.log(`e:`,e);
-	position.x=e.clientX
-	position.y=e.clientY
-	bus.emit("menu-show")
+	bus.emit("menu-show",{
+		type:"menu",
+		x:e.clientX,
+		y:e.clientY
+	})
 	menuDatas.value.splice(0,menuDatas.value.length)
 	if(item.value.edit){
 		item.value.edit=false
@@ -49,14 +54,12 @@ function showMenu(e,i){
 		// menuDatas.value.push(...i.menu(show))
 		menuDatas.value.push({
 			title:"打开",
-			type:FUNCTION,
 			hander:()=>{
 				createProgress(i.title,i.exec,"C:/用户/桌面","","a b ccc")
 			}
 		})
 		menuDatas.value.push({
 			title:"重命名",
-			type:FUNCTION,
 			hander:()=>{
 				item.value.edit=true
 				title.value=item.value.title
@@ -85,7 +88,6 @@ const menuData=[
 				children:[
 					{
 						title:"打开",
-						type:FUNCTION,
 						hander:()=>{
 							alert("打开")
 						}
@@ -121,7 +123,7 @@ function editNameInput(e){
 
 function editNameBlue(){
 	bus.emit("menu-close")
-	if(item.value.title &&title.value){
+	if(item.value.title&&title.value){
 		item.value.title = title.value
 		item.value.edit=false
 		item.value={}
@@ -130,9 +132,9 @@ function editNameBlue(){
 </script>
 
 <template>
-	<div class="desktop" @click="editNameBlue" @contextmenu.prevent="showMenu($event,null)" >
-		<Menu :data="menuDatas" :position="position"></Menu>
-		<div class="app" v-for="(item,index) in data" :key="item.title" tabindex="1" @contextmenu.prevent.stop="showMenu($event,item)">
+	<div class="desktop" :style="{backgroundImage:`url(${bg})`}" @click="editNameBlue" @contextmenu.prevent="showMenu($event,null)" >
+		<Menu :data="menuDatas"></Menu>
+		<div class="app" v-for="(item,index) in appList" :key="index" tabindex="1" @contextmenu.prevent.stop="showMenu($event,item)">
 			<div class="box" @dblclick="createProgress(item.title,item.exec,item.pwd,item.targetPath,item.args)">
 				<div class="icon" v-html="item.icon"></div>
 				<div class="name" v-if="!item.edit">
@@ -145,7 +147,6 @@ function editNameBlue(){
 				 contenteditable=""
 				 v-select
 				 ></div>
-				 
 			</div>
 		</div>
 		<div id="windows">
