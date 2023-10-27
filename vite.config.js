@@ -8,7 +8,8 @@ export default defineConfig({
 	plugins: [vue()],
 	base: './',
 	build: {
-		outDir: 'docs'
+		outDir: 'docs',
+		target: "chrome90", // 使用支持 await 的 Chrome 版本
 	},
 	resolve:{
 		alias:{
