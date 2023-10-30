@@ -14,6 +14,7 @@ export async function init(){
 				db.createTable(tableName).then((aa)=>{
 					async function initC(){
 						try {
+							console.log(`111:`,111);
 							const config=await (await fetch("config/index.json")).json()
 							await db.add(tableName,config,"system-config-default",true)
 							await db.add(tableName,1,"config-versions",true)//版本控制还没办法如果要完成需要后端配合吧 配置也要放后端
