@@ -54,13 +54,11 @@ watch(()=>tempPath.value,()=>{
 	search.value=tempPath.value
 	isLoad.value=true
 	const str=search.value||'/'
-	console.log(`str:`,str);
 	if(str==='/'){
 		isLoad.value=false
 		dir.value=systemDirectory
 	}else{
 		readFileAll(str).then(res=>{
-			console.log(`res:`,res,str);
 			if(res.length===0||res[0]&&res[0].pwd===search.value){
 				isLoad.value=false
 				dir.value=res
@@ -79,7 +77,6 @@ watchEffect(()=>{
 })
 const temp_file=ref({})
 function open(file){
-	console.log(`file:`,file);
 	if(file.type==="WebDir"){
 		history.splice(index.value+1,history.length)
 		history.push(file.path)

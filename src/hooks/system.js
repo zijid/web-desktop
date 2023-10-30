@@ -78,7 +78,6 @@ export function getWindow(pid){//名字，pid，运行程序
 function top(thisWin){
 	const pid=thisWin.pid
 	const thisWinIndex=windowList.findIndex(i=>i.pid===pid)
-	console.log("thisWinIndex:",thisWinIndex);
 	if(thisWinIndex>-1){
 		const topLocation=windowList.length
 		thisWin.z=topLocation+1
@@ -102,8 +101,6 @@ export function showWindow(pid,type){
 		}else if(type==="tab"){//点击底部，需要判断当前层级，是否隐藏
 			showDesktopState.value=false
 			let topLocation=windowList.length
-			console.log("topLocation:",topLocation);
-			console.log("thisWin.z:",thisWin.z);
 			if(thisWin.z===topLocation){//当前是最上层的
 				hide(thisWin)
 			}else if(thisWin.z<0){//隐藏的

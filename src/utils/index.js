@@ -89,11 +89,9 @@ export function findFile(systemDirectory,path){
 	let result
 	const cacheValue=tempCache[path]
 	if(cacheValue){
-		console.log("缓存取");
 		return cacheValue
 	}
 	function findArr(arr){
-		console.log("arr:",arr);
 		return arr.some(file=>{
 			if(file.path===path){
 				tempCache[path]=result=file

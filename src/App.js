@@ -2,10 +2,14 @@ import { Bus} from "@/utils";
 import Explorer from "./components/explorer/explorer.vue";
 import Notepad from "./components/notepad/notepad.vue";
 // import { loadFindPath,findFile, loadFindPathSync,findPath} from "./utils/fileOld";
+import { getConfig } from "@/system";
 import { loadSystemFile } from "@/utils/file";
 import { addApp} from "@/hooks";
 const bus=new Bus()
-let systemDirectory=loadSystemFile()
+let systemDirectory
+export function initApp(){
+	systemDirectory=loadSystemFile(getConfig())
+}
 // =[
 // 	new File("","C:",true,[
 // 		new File("C:","用户",true,[

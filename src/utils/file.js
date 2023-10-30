@@ -121,7 +121,6 @@ class WebFile extends FilesystemObject{
 	async read(){
 		const file=await this._read()
 		this.content=file.content
-		console.log(`this.content:`,this.content);
 		return this.content
 	}
 	set pwd(value){
@@ -153,7 +152,6 @@ class WebDir extends FilesystemObject{
 
 	async read(){
 		const dir=await this._readDir()
-		console.log(`dir:`,dir);
 		this.content=dir.map(i=>{
 			return dbToFile(i)
 		})
@@ -171,41 +169,43 @@ export {
 	WebFile,
 	WebDir
 }
-// {
-// 	let a=new WebDir("/D","TT")
-// 	a.save()
-// 	setTimeout(async ()=>{
-// 		console.log(`a:`,a);
-// 		console.log(`await a.read("atttttttttttaa222a"):`,await a.read("atttttttttttaa222a"));
-// 	},1000)
-// }
-// {
-// 	let a=new WebDir("/D/TT","22222name.txt")
-// 	a.save()
-// }
-// {
-// 	let a=new WebFile("/D","2name.txt")
-// 	a.save()
-// 	a.read()
-// 	a.write("aaaa")
-// 	setTimeout(async ()=>{
-// 		await a.write("atttttttttttaa222a")
-// 	},3000)
-// }
-// {
-// 	let a=new WebFile("/D","3name.txt")
-// 	a.read()
-// 	a.write("sssssss")
-// 	setTimeout(async ()=>{
-		
-// 		await a.write("atttttttttttaa222a")
-// 	},3000)
-// }
-// {
-// 	let a=new WebDir("/","D")
-// 	console.log(`+++++++++++++:`,	await a.read());
-// }
-export function loadSystemFile(){
+async function testFile(){
+	{
+		let a=new WebDir("/D","TT")
+		a.save()
+		setTimeout(async ()=>{
+			console.log(`a:`,a);
+			console.log(`await a.read("atttttttttttaa222a"):`,await a.read("atttttttttttaa222a"));
+		},1000)
+	}
+	{
+		let a=new WebDir("/D/TT","22222name.txt")
+		a.save()
+	}
+	{
+		let a=new WebFile("/D","2name.txt")
+		a.save()
+		a.read()
+		a.write("aaaa")
+		setTimeout(async ()=>{
+			await a.write("atttttttttttaa222a")
+		},3000)
+	}
+	{
+		let a=new WebFile("/D","3name.txt")
+		a.read()
+		a.write("sssssss")
+		setTimeout(async ()=>{
+			await a.write("atttttttttttaa222a")
+		},3000)
+	}
+	{
+		let a=new WebDir("/","D")
+		console.log(`+++++++++++++:`,	await a.read());
+	}
+}
+testFile()
+export function loadSystemFile(config){
 	const fileConfig=config.file
 	return fileConfig.map(i=>{
 		return new WebDir(i.pwd,i.name,i.title,true)
