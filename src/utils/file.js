@@ -1,6 +1,6 @@
 import {IndexedDB,utils} from "zijid-ui"
 import {db} from "@/system"
-const config=(await (await fetch("/config/index.json")).json())
+const config=(await (await fetch("config/index.json")).json())
 // const db = new IndexedDB("web-desktop")
 const tableName="web-desktop-table"
 if(!await db.isCreate(tableName)){
