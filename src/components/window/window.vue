@@ -1,7 +1,8 @@
 <script setup>
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick,provide,inject,onUnmounted} from "vue";
 import {getApp} from "../../utils/index"
-import { showWindow,closeWindow,createWindow,hideWindow,showCount} from "../../hooks/system";
+// import { showWindow,closeWindow,createWindow,hideWindow,showCount} from "@/hooks/system";
+import { showWindow,closeWindow,createWindow,hideWindow,showCount} from "@/system/window";
 const props=defineProps({
 	path:{
 		type:String,

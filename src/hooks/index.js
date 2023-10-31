@@ -1,9 +1,10 @@
 import {ref,reactive,markRaw} from "vue"
-import { FUNCTION } from "@/utils/types";
-import {createProgress} from "./system"
+import {createProgress} from "@/system/progress"
 import {exec,bus}from "@/App.js"
+export const progressList=reactive([])
+export const windowList=reactive([])
+export const activeAppPid=ref(null)
 export const data=[]
-
 // try{
 // 	bus.on("get:app",()=>{
 // 		bus.emit("update:app",data)
@@ -30,7 +31,6 @@ export function addApp(appName,titleTemp,path,targetPath,args){
 		menu:(show)=>[
 			{
 				title:"打开",
-				type:FUNCTION,
 				hander:()=>{
 					createProgress(title,appInfo.app,"C:/用户/桌面","","a b ccc")
 					show.value=false

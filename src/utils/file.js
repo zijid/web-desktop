@@ -31,12 +31,13 @@ async function _removeFile(path){
 }
 
 function dbToFile(params){
+	console.log(`params:`,params);
 	if(params.type==="WebFile"){
 		const file=new WebFile(params._pwd,params.name)
 		file.write(params.content)
 		return file
 	}else{
-		const dir=new WebDir(params._pwd,params.name)
+		const dir=new WebDir(params._pwd,params.name,params.nickname,params.system)
 		return dir
 	}
 }
@@ -138,14 +139,14 @@ class WebDir extends FilesystemObject{
 	nickname=""
 	type="WebDir"
 	system=false
-	constructor(pwd,name,nickname=name,system=false){
+	constructor(pwd,name,nickname,system=false){
 		if (!pwd||!name){
 			throw createFileError(`创建文件夹失败，无路径或文件夹名:pwd:${pwd} name:${name}`);
 		}
 		super()
 		this.name=name//文件名加后缀
 		this.pwd=pwd
-		this.nickname=nickname
+		this.nickname=nickname||name
 		this.content=null
 		this.system=system
 	}
@@ -170,39 +171,154 @@ export {
 	WebDir
 }
 async function testFile(){
-	{
-		let a=new WebDir("/D","TT")
-		a.save()
-		setTimeout(async ()=>{
-			console.log(`a:`,a);
-			console.log(`await a.read("atttttttttttaa222a"):`,await a.read("atttttttttttaa222a"));
-		},1000)
-	}
-	{
-		let a=new WebDir("/D/TT","22222name.txt")
-		a.save()
-	}
-	{
-		let a=new WebFile("/D","2name.txt")
-		a.save()
-		a.read()
-		a.write("aaaa")
-		setTimeout(async ()=>{
-			await a.write("atttttttttttaa222a")
-		},3000)
-	}
-	{
-		let a=new WebFile("/D","3name.txt")
-		a.read()
-		a.write("sssssss")
-		setTimeout(async ()=>{
-			await a.write("atttttttttttaa222a")
-		},3000)
-	}
-	{
-		let a=new WebDir("/","D")
-		console.log(`+++++++++++++:`,	await a.read());
-	}
+	// {
+	// 	let a=new WebDir("/D","TT")
+	// 	a.save()
+	// }
+	// {
+	// 	let a=new WebDir("/D/TT","22222name.txt")
+	// 	a.save()
+	// }
+	// {
+	// 	let a=new WebFile("/D","2name.txt")
+	// 	a.save()
+	// 	a.read()
+	// 	a.write("aaaa")
+	// }
+	// {
+	// 	let a=new WebFile("/D","3name.txt")
+	// 	a.read()
+	// 	a.write("sssssss")
+	// }
+	// {
+	// 	let a=new WebDir("/","D")
+	// }
+	// const initDir=[
+	// 	"/C/用户/桌面",
+	// 	"/C/用户/文档",
+	// 	"/C/用户",
+	// 	"/C/临时文件",
+	// 	"/C/系统文件",
+	// 	"/C/系统软件",
+	// 	"/D",
+	// 	"/E",
+	// 	"/E/文件夹1",
+	// 	"/E/文件夹1/文本文件2",
+	// 	"/E/文件夹1/文本文件3",
+	// 	"/E/文件夹2",
+	// ]
+	// initDir.forEach(i=>{
+	// 	let names=i.split("/")
+	// 	const name=names.splice(-1)[0]
+	// 	const pwd=names.join("/")||"/"
+	// 	let dir=new WebDir(pwd,name)
+	// 	dir.save()
+	// })
+	// const initFile=[
+	// 	"/E/文件夹1/文本文件2",
+	// 	"/E/文件夹1/文本文件3",
+	// 	"/E/文本文件1",
+	// ]
+	// initFile.forEach(i=>{
+	// 	let names=i.split("/")
+	// 	const name=names.splice(-1)[0]
+	// 	const pwd=names.join("/")||"/"
+	// 	let file=new WebFile(pwd,name)
+	// 	file.save()
+	// })
+	const initDir=[
+		// {
+		// 	pwd:"/",
+		// 	name:"C",
+		// 	nickname:"系统",
+		// 	system:true
+		// },
+		// {
+		// 	pwd:"/",
+		// 	name:"D",
+		// 	nickname:"软件",
+		// 	system:true
+		// },
+		// {
+		// 	pwd:"/",
+		// 	name:"E",
+		// 	nickname:"文档",
+		// 	system:true
+		// },
+		{
+			pwd:"/C",
+			name:"Users",
+			nickname:"用户"
+		},
+		{
+			pwd:"/C",
+			name:"Desktop",
+			nickname:"桌面"
+		},
+		{
+			pwd:"/C",
+			name:"Document",
+			nickname:"文档"
+		},
+		{
+			pwd:"/C",
+			name:"Temp",
+			nickname:"临时文件"
+		},
+		{
+			pwd:"/C",
+			name:"System",
+			nickname:"系统文件"
+		},
+		{
+			pwd:"/C",
+			name:"SystemSoftware",
+			nickname:"系统软件"
+		},
+		{
+			pwd:"/E",
+			name:"文件夹1",
+			nickname:""
+		},
+		{
+			pwd:"/E",
+			name:"文件夹2",
+			nickname:""
+		},
+	]
+	initDir.forEach(i=>{
+		const pwd=i.pwd
+		const name=i.name
+		const nickname=i.nickname
+		const system=i.system
+		let dir=new WebDir(pwd,name,nickname,system)
+		dir.save()
+	})
+	const initFile=[
+		{
+			pwd:"/E/文件夹1",
+			name:"文本文件2",
+			content:"/E/文件夹1/文本文件2"
+		},
+		{
+			pwd:"/E/文件夹1",
+			name:"文本文件3",
+			content:"/E/文件夹1/文本文件3"
+		},
+		{
+			pwd:"/E",
+			name:"文本文件1",
+			content:"/E/文本文件1"
+		},
+	]
+	initFile.forEach(i=>{
+		const pwd=i.pwd
+		const name=i.name
+		const content=i.content
+		let file=new WebFile(pwd,name)
+		file.write(content)
+		file.save()
+	})
 }
 testFile()
 export function loadSystemFile(config){

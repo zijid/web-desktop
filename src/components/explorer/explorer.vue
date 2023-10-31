@@ -1,8 +1,6 @@
 <script setup>
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
 import {systemDirectory} from "../../App"
-// import { findFile } from "../../utils";
-// import { findFile,loadFindPath} from "../../utils/fileOld";
 import {readFileAll,readFile} from "@/utils/file"
 import Win from "../window/window.vue";
 import {Message} from "zijid-ui"
@@ -197,7 +195,7 @@ function find(){
 							<template v-if="file.system">({{file.name}})</template>
 						</div>
 					</div>
-					<div class="dir_file" v-else @dblclick="open(file)" >
+					<div class="dir_file" v-else @dblclick="open(file)">
 						<div style="font-size: 24px;">
 							<zi-icon name="file"></zi-icon>
 						</div>
@@ -338,7 +336,7 @@ function find(){
 .root_dir{
 	width: 10em;
 	height: 2em;
-	margin-right:1em;
+	margin-left:1em;
 	padding: 0.5em;
 	border:1px solid #000;
 	display: flex;

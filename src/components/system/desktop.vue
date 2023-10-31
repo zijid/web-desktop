@@ -1,9 +1,11 @@
 <script setup>
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick,defineAsyncComponent} from "vue";
 import Menu from "@/components/system/menu/menu.vue";
-import {createProgress,progressList,showWindow,activeAppPid,windowList,showDesktop} from "@/hooks/system"
+import {createProgress} from "@/system/progress"
+
+import {showWindow,showDesktop} from "@/system/window";
 import { exec,bus,initApp} from "@/App"
-import { addApp,openAppList,data} from "@/hooks";
+import { addApp,openAppList,data,windowList,progressList,activeAppPid} from "@/hooks";
 import {init,getConfig} from "@/system"
 await init()
 initApp()
@@ -37,6 +39,7 @@ const vSelect = {
 const item=ref({})
 let title=ref("")
 function showMenu(e,i){
+	console.log(`e,i:`,e,i);
 	bus.emit("menu-show",{
 		type:"menu",
 		x:e.clientX,
@@ -99,6 +102,12 @@ const menuData=[
 		icon:`<?xml version="1.0" encoding="UTF-8"?><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 8C5 6.89543 5.89543 6 7 6H19L24 12H41C42.1046 12 43 12.8954 43 14V40C43 41.1046 42.1046 42 41 42H7C5.89543 42 5 41.1046 5 40V8Z" fill="none" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M43 22H5" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M5 16V28" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M43 16V28" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 		hander:()=>{
 			const app=addApp("explorer","文件管理器","","","")
+			/**
+			 创建文件夹
+			 需要
+			 当前位置
+			 文件夹名称
+			 */
 			item.value=app
 			app.edit=true
 			title.value=app.title
@@ -130,7 +139,7 @@ function editNameBlue(){
 </script>
 
 <template>
-	<div class="desktop" :style="{backgroundImage:`url(${bg})`}" @click="editNameBlue" @contextmenu.prevent="showMenu($event,null)" >
+	<div class="desktop" :style="{backgroundImage:`url(${bg})`}" @click="editNameBlue" @contextmenu.prevent="showMenu($event,{alias:'desktop'})" >
 		<Menu :data="menuDatas"></Menu>
 		<div class="app" v-for="(item,index) in appList" :key="index" tabindex="1" @contextmenu.prevent.stop="showMenu($event,item)">
 			<div class="box" @dblclick="createProgress(item.title,item.exec,item.pwd,item.targetPath,item.args)">
@@ -152,7 +161,7 @@ function editNameBlue(){
 				<component :is="progress.exec" v-bind="progress" ref="app"></component>
 			</template>
 		</div>
-		<div class="tab" v-show="progressList.length">
+		<div class="tab"><!-- v-show="progressList.length"-->
 			<template v-for="(progress,index) in progressList" :key="progress.pid">
 				<div v-if="windowList.find(i=>i.pid===progress.pid)" class="app_item" :class="{active_app:activeAppPid===progress.pid}" @click="showApp(progress.pid,index)">
 					{{ progress.title }}

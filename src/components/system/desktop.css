@@ -18,7 +18,6 @@
     right: 0;
     width: 10px;
 	height:var(--tab-height);
-	background: #3a3a3a;
     box-shadow: -1px 0px 1px #ffffff57;
 }
 .showDesktop:hover{
@@ -27,7 +26,7 @@
 .tab{
 	width: 100%;
 	height:var(--tab-height);
-	background-color: #0000007a;
+	background-color: #18323f;
 	position: fixed;
 	bottom: 0;
 	display: flex;
