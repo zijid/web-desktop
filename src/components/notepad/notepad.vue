@@ -53,7 +53,7 @@ watchEffect(()=>{
 <template>
 <Win :path="path" :pid="pid">
 	<template v-slot:title>
-		记事本
+		{{title}}
 	</template>
 	<div class="content">
 		<div class="function">

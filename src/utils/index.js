@@ -122,4 +122,9 @@ export class Bus {
 		this.callbacks[name].forEach((cb) => cb(args));  
 	  }  
 	}  
-} 
+}
+export function stringToBlobUrl(str,type){//stringToBlobUrl(str,'image/svg+xml')
+	const blob = new Blob([str], { type });
+	const blobUrl = URL.createObjectURL(blob);
+	return blobUrl
+}

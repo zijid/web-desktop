@@ -1,3 +1,4 @@
+import {stringToBlobUrl} from "@/utils"
 import {IndexedDB,utils} from "zijid-ui"
 import {db} from "@/system"
 const config=(await (await fetch("config/index.json")).json())
@@ -31,18 +32,24 @@ async function _removeFile(path){
 }
 
 function dbToFile(params){
-	console.log(`params:`,params);
+	if(!params)return
 	if(params.type==="WebFile"){
-		const file=new WebFile(params._pwd,params.name)
+		const file=new WebFile(params._pwd,params._name)
+		file.setIcon(params.icon)
 		file.write(params.content)
 		return file
 	}else{
 		const dir=new WebDir(params._pwd,params.name,params.nickname,params.system)
+		dir.setIcon(params.icon)
 		return dir
 	}
 }
 class FilesystemObject{
 	uid=utils.uid()
+	icon=""
+	setIcon(str){
+		this.icon=str
+	}
 	async write(txt){
 		return this.content=txt
 	}
@@ -66,11 +73,10 @@ class FilesystemObject{
 		this.save()
 	}
 	rename(name){
-		console.log("this.name:",this.name);
 		_removeFile(this.path)
 		this.name=name
 		this.path=this.pwd+name
-		localStorage.setItem(this.path,this.content)
+		_writeFile(this.path,this)
 	}
 	delete(){
 		_removeFile(this.path)
@@ -103,7 +109,8 @@ function pathJoin(...paths){
 	return fullPath;
 }
 class WebFile extends FilesystemObject{
-	name=""
+	extension=""
+	_name=""
 	_pwd=""
 	path=""
 	nickname=""
@@ -128,8 +135,21 @@ class WebFile extends FilesystemObject{
 		this._pwd = value
 		this.path=pathJoin(value,this.name)
 	}
+	set name(value){
+		let names=value.split(".")
+		let extension=""
+		if(names.length>1){
+			extension=names.slice(names.length-1)
+			this.extension="."+extension
+		}
+		this._name=value
+		this.path=pathJoin(this._pwd,value)
+	}
 	get pwd(){
 		return this._pwd
+	}
+	get name(){
+		return this._name
 	}
 }
 class WebDir extends FilesystemObject{
@@ -170,81 +190,13 @@ export {
 	WebFile,
 	WebDir
 }
+
+const dir_str = `<?xml version="1.0" encoding="UTF-8"?><svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 8C5 6.89543 5.89543 6 7 6H19L24 12H41C42.1046 12 43 12.8954 43 14V40C43 41.1046 42.1046 42 41 42H7C5.89543 42 5 41.1046 5 40V8Z" fill="#ffc25b" stroke="#9013fe" stroke-width="4" stroke-linejoin="round"/><path d="M43 22H5" stroke="#ffffff" stroke-width="4" stroke-linejoin="round"/><path d="M5 16V28" stroke="#9013fe" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M43 16V28" stroke="#9013fe" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const file_str =`<?xml version="1.0" encoding="UTF-8"?><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M40 23V14L31 4H10C8.89543 4 8 4.89543 8 6V42C8 43.1046 8.89543 44 10 44H22" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M33 29V43" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M26 36H33H40" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 4V14H40" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+const txt_str =`<?xml version="1.0" encoding="UTF-8"?><svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 6C8 4.89543 8.89543 4 10 4H30L40 14V42C40 43.1046 39.1046 44 38 44H10C8.89543 44 8 43.1046 8 42V6Z" fill="#ffffff" stroke="#000000" stroke-width="4" stroke-linejoin="round"/><path d="M16 20H32" stroke="#707070" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 28H32" stroke="#707070" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+const no_str =`<?xml version="1.0" encoding="UTF-8"?><svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 44H38C39.1046 44 40 43.1046 40 42V14H30V4H10C8.89543 4 8 4.89543 8 6V42C8 43.1046 8.89543 44 10 44Z" fill="#ffffff" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 4L40 14" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 22L30 34" stroke="#707070" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 22L18 34" stroke="#707070" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`
 async function testFile(){
-	// {
-	// 	let a=new WebDir("/D","TT")
-	// 	a.save()
-	// }
-	// {
-	// 	let a=new WebDir("/D/TT","22222name.txt")
-	// 	a.save()
-	// }
-	// {
-	// 	let a=new WebFile("/D","2name.txt")
-	// 	a.save()
-	// 	a.read()
-	// 	a.write("aaaa")
-	// }
-	// {
-	// 	let a=new WebFile("/D","3name.txt")
-	// 	a.read()
-	// 	a.write("sssssss")
-	// }
-	// {
-	// 	let a=new WebDir("/","D")
-	// }
-	// const initDir=[
-	// 	"/C/用户/桌面",
-	// 	"/C/用户/文档",
-	// 	"/C/用户",
-	// 	"/C/临时文件",
-	// 	"/C/系统文件",
-	// 	"/C/系统软件",
-	// 	"/D",
-	// 	"/E",
-	// 	"/E/文件夹1",
-	// 	"/E/文件夹1/文本文件2",
-	// 	"/E/文件夹1/文本文件3",
-	// 	"/E/文件夹2",
-	// ]
-	// initDir.forEach(i=>{
-	// 	let names=i.split("/")
-	// 	const name=names.splice(-1)[0]
-	// 	const pwd=names.join("/")||"/"
-	// 	let dir=new WebDir(pwd,name)
-	// 	dir.save()
-	// })
-	// const initFile=[
-	// 	"/E/文件夹1/文本文件2",
-	// 	"/E/文件夹1/文本文件3",
-	// 	"/E/文本文件1",
-	// ]
-	// initFile.forEach(i=>{
-	// 	let names=i.split("/")
-	// 	const name=names.splice(-1)[0]
-	// 	const pwd=names.join("/")||"/"
-	// 	let file=new WebFile(pwd,name)
-	// 	file.save()
-	// })
 	const initDir=[
-		// {
-		// 	pwd:"/",
-		// 	name:"C",
-		// 	nickname:"系统",
-		// 	system:true
-		// },
-		// {
-		// 	pwd:"/",
-		// 	name:"D",
-		// 	nickname:"软件",
-		// 	system:true
-		// },
-		// {
-		// 	pwd:"/",
-		// 	name:"E",
-		// 	nickname:"文档",
-		// 	system:true
-		// },
 		{
 			pwd:"/C",
 			name:"Users",
@@ -254,6 +206,10 @@ async function testFile(){
 			pwd:"/C",
 			name:"Desktop",
 			nickname:"桌面"
+		},
+		{
+			pwd:"/C/Desktop",
+			name:"文件夹",
 		},
 		{
 			pwd:"/C",
@@ -292,6 +248,7 @@ async function testFile(){
 		const nickname=i.nickname
 		const system=i.system
 		let dir=new WebDir(pwd,name,nickname,system)
+		dir.setIcon(dir_str)
 		dir.save()
 	})
 	const initFile=[
@@ -310,21 +267,51 @@ async function testFile(){
 			name:"文本文件1",
 			content:"/E/文本文件1"
 		},
+		{
+			pwd:"/C/Desktop",
+			name:"文本文件33",
+		},
+		{
+			pwd:"/C/Desktop",
+			name:"文本文件2",
+		},
+		{
+			pwd:"/C/Desktop",
+			name:"111.txt",
+		},
+		{
+			pwd:"/C/Desktop/文件夹",
+			name:"文件夹内容.txt",
+		},
 	]
 	initFile.forEach(i=>{
 		const pwd=i.pwd
 		const name=i.name
+		let names=name.split(".")
+		let extension=""
+		if(names.length>1){
+			extension=names.slice(names.length-1)[0]
+		}
 		const content=i.content
 		let file=new WebFile(pwd,name)
+		if(extension==="txt"){
+			file.setIcon(txt_str)
+		}else{
+			file.setIcon(no_str)
+		}
 		file.write(content)
 		file.save()
 	})
 }
+
+// console.log(`stringToBlobUrl(str,'image/svg+xml'):`,stringToBlobUrl(str,'image/svg+xml'));
 testFile()
 export function loadSystemFile(config){
 	const fileConfig=config.file
 	return fileConfig.map(i=>{
-		return new WebDir(i.pwd,i.name,i.title,true)
+		const dir=new WebDir(i.pwd,i.name,i.title,true)
+		dir.setIcon(`<?xml version="1.0" encoding="UTF-8"?><svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M44 29H4V42H44V29Z" fill="none" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M35.5 38C36.8807 38 38 36.8807 38 35.5C38 34.1193 36.8807 33 35.5 33C34.1193 33 33 34.1193 33 35.5C33 36.8807 34.1193 38 35.5 38Z" fill="#333"/><path d="M4 28.9998L9.03837 4.99902H39.0205L44 28.9998" stroke="#333" stroke-width="4" stroke-linejoin="round"/></svg>`)
+		return dir
 	})
 }
 export async function readFileAll(path){//这里的path对应需要获取的文件的pwd
@@ -333,6 +320,7 @@ export async function readFileAll(path){//这里的path对应需要获取的文�
 }
 export async function readFile(path){//这里的path对应需要获取的文件的pwd
 	const dbFile=await _readFile(path)
+	if(!dbFile)throw new Error(`文件不存在`)
 	return dbToFile(dbFile)
 }
 function sleep(time){

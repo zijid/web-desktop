@@ -13,23 +13,14 @@ const props=defineProps({
 	// 	type:Number,
 	// 	default:0
 	// }
-	args:{
-		type:String,
-		default:""
-	},
 })
-const args=computed(()=>{
-	return props.args.split(" ")
-})//path （开始路径） 
 const emits=defineEmits([])
 
 const search=ref("")
-
 const searchKeyword=ref("")
 
 const tempPath=ref("")
 const history=[]
-const explorer=ref(null)
 const dir=ref(systemDirectory)
 // const dir=computed(()=>{
 // 	console.log(`222222222systemDirectory:`,systemDirectory);
@@ -64,16 +55,10 @@ watch(()=>tempPath.value,()=>{
 		})
 	}
 })
-let t
-watch(()=>search.value,()=>{
-	clearTimeout(t)
-	t=setTimeout(()=>{
-	},100)
+onMounted(()=>{
+	tempPath.value=props.path
+	history.push(tempPath.value)
 })
-watchEffect(()=>{
-	history.push(tempPath.value=props.path)
-})
-const temp_file=ref({})
 function open(file){
 	if(file.type==="WebDir"){
 		history.splice(index.value+1,history.length)
@@ -95,53 +80,14 @@ function move(i){
 
 function skip(){
 	let search_str=search.value
+	
 	if(tempPath.value===search_str){
 		return
 	}
-	isLoad.value=true
-	readFile(search_str).then(file=>{
-		isLoad.value=false
-		if(file.type==="WebDir"){
-			history.splice(index.value+1,history.length)
-			history.push(file.path)
-			index.value=history.length-1
-			tempPath.value=search_str
-		}else{
-			file.read().then(r=>{
-				Message('文件内容:'+r)
-			})
-			alert("打开"+file.name)
-		}
-	})
-	// readFileAll(search_str).then(r=>{
-	// 	const file=findFile(search_str)
-	// 	if(file){
-	// 		file.load().then(()=>{
-	// 			isLoad.value=false
-	// 			temp_file.value.isLoad=file.isLoad
-	// 			if(file.isFolder){
-	// 				history.splice(index.value+1,history.length)
-	// 				history.push(file.path)
-	// 				index.value=history.length-1
-					
-	// 				tempPath.value=search_str
-	// 			}else{
-	// 				alert("打开"+file.name)
-	// 			}
-	// 		})
-	// 	}else{
-	// 		isLoad.value=false
-	// 		temp_file.value.isLoad=true
-	// 		if(!file&&search_str){
-	// 			alert("没有找到文件或文件夹")
-	// 		}else{
-	// 			history.splice(index.value+1,history.length)
-	// 			history.push("")
-	// 			index.value=history.length-1
-	// 			tempPath.value=""
-	// 		}
-	// 	}
-	// })
+	history.splice(index.value+1,history.length)
+	history.push(search_str)
+	tempPath.value=search_str
+	index.value=history.length-1
 }
 function find(){
 	alert("搜索未制作")
@@ -158,12 +104,12 @@ function find(){
 			<div class="history">
 				<button class="after"
 				@click="move(-1)"
-				:disabled="index==0" title="后退">
+				:disabled="history.length===0||index==0" title="后退">
 					←
 				</button>
 				<button class="before"
 				@click="move(1)"
-				:disabled="index===history.length-1"
+				:disabled="history.length===0||index===history.length-1"
 				title="前进">
 					→
 				</button>
@@ -205,7 +151,7 @@ function find(){
 					</div>
 				</template>
 			</template>
-			<div v-show="isLoad===false&&dir.length===0" class="no_dir_content">空文件夹</div>
+			<div v-show="isLoad===false&&dir&&dir.length===0" class="no_dir_content">空文件夹</div>
 			<div v-show="isLoad===false&&dir===null" class="no_dir_content">不存在这个文件或文件夹</div>
 		</div>
 	</div>

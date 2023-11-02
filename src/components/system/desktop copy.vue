@@ -14,20 +14,11 @@ const config=getConfig()
 console.log(`配置config:`,config);
 const appList=ref([...data])
 const bg=ref("")
-const systemAppList=[{
-	name:"根目录",
-	type:"WebDir",
-	pwd:"",
-	path:"",
-	args:"",
-	icon:`<?xml version="1.0" encoding="UTF-8"?><svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 33H4V7H44V33H36H12Z" fill="#2F88FF" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M16 22V26" stroke="#50e3c2" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 33V39" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 18V26" stroke="#50e3c2" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M32 14V26" stroke="#50e3c2" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 41H36" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`
-}]
 onMounted(()=>{
 	bg.value=config.desktop.bg.base64||config.desktop.bg.url
 	readFileAll(config.desktop.path).then(res=>{
 		console.log(`res:`,res);
-		appList.value=[...systemAppList,...res]
-		openApp(systemAppList[0])
+		appList.value=res
 	})
 	// bus.on("update:app",(apps)=>{
 	// 	appList.value=[...apps]
@@ -73,7 +64,7 @@ function showMenu(e,i){
 		menuDatas.value.push({
 			title:"打开",
 			hander:()=>{
-				createProgress(i.title,i.exec,"C:/用户/桌面","","a b ccc")
+				createProgress(i.title,i.exec,"C:/用户/桌面","")
 			}
 		})
 		menuDatas.value.push({
@@ -151,37 +142,13 @@ function editNameBlue(){
 		item.value={}
 	}
 }
-function openApp(item){
-	console.log(`item:`,item);
-	let app
-	if(item.type==="WebDir"){
-		app="Explorer"
-	}else{
-		app="Notepad"
-	}
-	createProgress(item.name,app,item.pwd,item.path)
-}
-
 </script>
 
 <template>
 	<div class="desktop" :style="{backgroundImage:`url(${bg})`}" @click="editNameBlue" @contextmenu.prevent="showMenu($event,{alias:'desktop'})" >
 		<Menu :data="menuDatas"></Menu>
 		<div class="app" v-for="(item,index) in appList" :key="index" tabindex="1" @contextmenu.prevent.stop="showMenu($event,item)">
-			<!-- <div class="box" @dblclick="createProgress(item.title,item.exec,item.pwd,item.targetPath,item.args)">
-				<div class="icon" v-html="item.icon"></div>
-				<div class="name" v-if="!item.edit">
-					{{item.title}}
-				</div>
-				<div class="name editName" v-else v-focus v-text="data[index].title"
-				 @input="editNameInput"
-				 @click.stop
-				 @dblclick.stop
-				 contenteditable=""
-				 v-select
-				 ></div>
-			</div> -->
-			<div class="box" @dblclick="openApp(item)">
+			<div class="box" @dblclick="createProgress(item.title,item.exec,item.pwd,item.targetPath)">
 				<div class="icon">
 					<div class="svg" v-html="item.icon"></div>
 				</div>
@@ -201,8 +168,6 @@ function openApp(item){
 			</div>
 		</div>
 		<div id="windows">
-			<!-- <Notepad></Notepad>
-			<Explorer></Explorer> -->
 			<template v-for="(progress,index) in progressList" :key="progress.pid">
 				<component :is="progress.exec" v-bind="progress" ref="app"></component>
 			</template>

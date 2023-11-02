@@ -32,7 +32,7 @@ export function addApp(appName,titleTemp,path,targetPath,args){
 			{
 				title:"打开",
 				hander:()=>{
-					createProgress(title,appInfo.app,"C:/用户/桌面","","a b ccc")
+					createProgress(title,appInfo.app,"C:/用户/桌面","")
 					show.value=false
 				}
 			},

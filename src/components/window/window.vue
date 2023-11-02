@@ -110,8 +110,8 @@ onUnmounted(()=>{
 
 <template>
 	<div :tabindex="winInfo.pid" class="win" ref="win" v-show="winInfo.z>-1" :class="{max:windowState.isMax}" :style="{left:windowState.x+'px',top:windowState.y+'px',zIndex:winInfo.z,width:windowState.w+'%',height:`calc( ${windowState.h}% - var(--tab-height) )`}" @mousedown="activeApp">
-		<div :title="title" class="header" ref="winMove" v-move="windowState" @move="move">
-			<div style="pointer-events: none;">
+		<div :title="title" class="header" ref="winMove" v-move="windowState" @move="move" @dblclick="max(winInfo.pid)">
+			<div style="pointer-events: none;height: 1.2em;">
 				<slot name="title"></slot>
 			</div>
 			<div class="handle">

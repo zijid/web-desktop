@@ -6,12 +6,13 @@ import {findProgress} from "@/system/progress"
 let showDesktopState=false
 export function createWindow(pid){//名字，pid，运行程序
 	const progress=findProgress(pid)
+	console.log(`progress:`,progress);
 	activeAppPid.value=pid
 	const win=reactive({
-		title:progress.title,
+		title:progress?.title,
 		pid:pid,
-		args:progress.args,
-		exec:progress.exec,
+		args:progress?.args,
+		exec:progress?.exec,
 		z:windowList.length+1
 	})
 	windowList.push(win)
