@@ -3,6 +3,7 @@ import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
 import {systemDirectory} from "../../App"
 import {readFileAll,readFile} from "@/utils/file"
 import Win from "../window/window.vue";
+import {fileList} from "@/hooks"
 import {Message} from "zijid-ui"
 const props=defineProps({
 	path:{
@@ -15,48 +16,59 @@ const props=defineProps({
 	// }
 })
 const emits=defineEmits([])
-
 const search=ref("")
 const searchKeyword=ref("")
 
 const tempPath=ref("")
 const history=[]
-const dir=ref(systemDirectory)
-// const dir=computed(()=>{
-// 	console.log(`222222222systemDirectory:`,systemDirectory);
-// 	return systemDirectory
-// 	if(!tempPath.value){
-// 		return systemDirectory
-// 	}else{
-// 		const file=findFile(tempPath.value)
-// 		if(file){
-// 			return file.content||[]
-// 		}else{
-// 			return null
-// 		}
-		 
-// 	}
-// })
 const isLoad=ref(false)
 const index=ref(0)
+const dir=computed(()=>{
+	return fileList[tempPath.value]
+})
+fileList[tempPath.value]=systemDirectory
+if(!systemDirectory){
+	isLoad.value=true
+	const t=setInterval(()=>{
+		if(systemDirectory){
+			if(tempPath.value==="/"||tempPath.value==="")isLoad.value=false
+			clearInterval(t)
+			fileList["/"]=systemDirectory
+			fileList[""]=systemDirectory
+		}
+	},100)
+}
 watch(()=>tempPath.value,()=>{
 	search.value=tempPath.value
 	isLoad.value=true
 	const str=search.value||'/'
 	if(str==='/'){
 		isLoad.value=false
-		dir.value=systemDirectory
+		fileList[tempPath.value]=systemDirectory
 	}else{
 		readFileAll(str).then(res=>{
-			if(res.length===0||res[0]&&res[0].pwd===search.value){
+			if(res.length===0){
+				readFile(str).then(s=>{
+					isLoad.value=false
+					if(s){
+						fileList[tempPath.value]=res
+					}else{
+						fileList[tempPath.value]=null
+					}
+				})
+			}else if(res[0]){
 				isLoad.value=false
-				dir.value=res
+				fileList[tempPath.value]=res
 			}
 		})
 	}
 })
 onMounted(()=>{
-	tempPath.value=props.path
+	if(props.path.startsWith("/system-app")){
+		tempPath.value=""
+	}else{
+		tempPath.value=props.path
+	}
 	history.push(tempPath.value)
 })
 function open(file){
@@ -67,7 +79,6 @@ function open(file){
 		index.value=history.length-1
 	}else{
 		file.read().then(r=>{
-			console.log(`txt r:`,r);
 			Message('文件内容:'+r)
 		})
 	}
@@ -128,17 +139,19 @@ function find(){
 			@keydown.enter="find">
 		</div>
 		<div class="body">
+
 			<div class="loading d" v-if="isLoad===true">加载中</div>
 			<template v-else>
-				<template class="dir_box" v-for="file in dir" :key="file.uid">
+				<!-- <zi-dir style="width: 140px;" @open="openDir" :data="dirData1"></zi-dir> -->
+				<template class="dir_box" v-for="file in fileList[tempPath]" :key="file.uid+file.name">
 					<div :class="[file.system?'root_dir':'dir_file']" v-if="file.type==='WebDir'" @dblclick="open(file)" >
 						<div style="font-size: 24px;">
 							<zi-icon name="user" v-if="file.system"></zi-icon>
 							<zi-icon name="folder-close" v-else></zi-icon>
 						</div>
 						<div class="root_dir_name">
-							{{file.nickname}}
-							<template v-if="file.system">({{file.name}})</template>
+							{{file.nickname||file.name}}
+							<template v-if="file.system&&file.nickname">({{file.name}})</template>
 						</div>
 					</div>
 					<div class="dir_file" v-else @dblclick="open(file)">
@@ -146,7 +159,7 @@ function find(){
 							<zi-icon name="file"></zi-icon>
 						</div>
 						<div class="name">
-							{{file.name}}
+							{{file.nickname||file.name}}
 						</div>
 					</div>
 				</template>

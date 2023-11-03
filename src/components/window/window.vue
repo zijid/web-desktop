@@ -157,7 +157,7 @@ onUnmounted(()=>{
 	user-select: none;
 }
 .max{
-	transition: all 0.3s ease;
+	transition: all .3s ease;
 	top: 0 !important;
 	left: 0 !important;
 	width: 100% !important;

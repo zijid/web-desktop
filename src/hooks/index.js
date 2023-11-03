@@ -4,6 +4,8 @@ import {exec,bus}from "@/App.js"
 export const progressList=reactive([])
 export const windowList=reactive([])
 export const activeAppPid=ref(null)
+
+export const fileList=reactive({})
 export const data=[]
 // try{
 // 	bus.on("get:app",()=>{

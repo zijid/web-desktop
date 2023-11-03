@@ -72,10 +72,10 @@
 .app{
 	width: 80px;
 	height: calc( 60px + var(--line-height) *2 + 8px);
-	margin: 10px;
+	margin: 0 0 10px 10px;
 	box-sizing: border-box;
 	position: relative;
-
+	outline: none;
 }
 .box{
 	width: 80px;
