@@ -33,13 +33,13 @@ export async function init(){
 	})
 	// if(!await db.isCreate(tableName)){
 	// 	await db.createTable(tableName)
-	// 	const config=await (await fetch("/config/index.json")).json()
+	// 	const config=await (await fetch("config/index.json")).json()
 	// 	loadingArr.push(config)
 	// 	loadingArr.push(await db.add(tableName,config,"system-config-default",true))
 	// 	await db.add(tableName,1,"config-versions",true)//版本控制还没办法如果要完成需要后端配合吧 配置也要放后端
 	// 	loadingArr.push(await db.add(tableName,1,"config-versions",true))
 	// }
-	const initConfgi=new Promise((r,j)=>{
+	const initConfg=new Promise((r,j)=>{
 		DBInit.then(()=>{
 			db.find(tableName,"system-config-default").then(res=>{
 				system_config=res
@@ -53,7 +53,7 @@ export async function init(){
 		})
 	})
 	// console.log(` await db.find(tableName,path):`,await db.find(tableName,"config-versions"));
-	loadingArr.push(DBInit,initConfgi)//初始化db,初始化配置
+	loadingArr.push(DBInit,initConfg)//初始化db,初始化配置
 	const loading=Promise.all(loadingArr).then((r)=>{
 		return (r.join("\n"))
 	}).catch((err)=>{

@@ -272,15 +272,6 @@ async function testFile(){
 			nickname:""
 		},
 	]
-	initDir.forEach(i=>{
-		const pwd=i.pwd
-		const name=i.name
-		const nickname=i.nickname
-		const system=i.system
-		let dir=new WebDir(pwd,name,nickname,system)
-		dir.setIcon(dir_str)
-		dir.save()
-	})
 	const initFile=[
 		{
 			pwd:"/E/文件夹1",
@@ -314,23 +305,37 @@ async function testFile(){
 			name:"文件夹内容.txt",
 		},
 	]
-	initFile.forEach(i=>{
-		const pwd=i.pwd
-		const name=i.name
-		let names=name.split(".")
-		let extension=""
-		if(names.length>1){
-			extension=names.slice(names.length-1)[0]
+	readFile("/E/文件夹2").then(res=>{
+		if(!res){
+			initDir.forEach(i=>{
+				const pwd=i.pwd
+				const name=i.name
+				const nickname=i.nickname
+				const system=i.system
+				let dir=new WebDir(pwd,name,nickname,system)
+				dir.setIcon(dir_str)
+				dir.save()
+			})
+			
+			initFile.forEach(i=>{
+				const pwd=i.pwd
+				const name=i.name
+				let names=name.split(".")
+				let extension=""
+				if(names.length>1){
+					extension=names.slice(names.length-1)[0]
+				}
+				const content=i.content
+				let file=new WebFile(pwd,name)
+				if(extension==="txt"){
+					file.setIcon(txt_str)
+				}else{
+					file.setIcon(no_str)
+				}
+				file.write(content)
+				file.save()
+			})
 		}
-		const content=i.content
-		let file=new WebFile(pwd,name)
-		if(extension==="txt"){
-			file.setIcon(txt_str)
-		}else{
-			file.setIcon(no_str)
-		}
-		file.write(content)
-		file.save()
 	})
 }
 

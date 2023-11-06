@@ -13,6 +13,9 @@ initApp()
 const config=getConfig()
 console.log(`配置config:`,config);
 const appList=ref([...data])
+// const appList=computed(()=>{
+// 	return fileList[config.desktop.path]
+// })
 const bg=ref("")
 const systemAppList=[]
 try {
@@ -32,11 +35,15 @@ try {
 	console.error("加载默认桌面app失败："+error)
 }
 let editFileName=""
+function initAppList(){
+	appList.value=[...systemAppList,...fileList[config.desktop.path]]
+	appList.value.sort(({createTime:a},{createTime:b})=>a-b)
+	console.log(`appList.value:`,appList.value);
+}
 function initList(){
 	readFileAll(config.desktop.path).then(res=>{
 		fileList[config.desktop.path]=res
-		appList.value=[...systemAppList,...fileList[config.desktop.path]]
-		appList.value.sort(({createTime:a},{createTime:b})=>a-b)
+		initAppList()
 		// openApp(systemAppList[0])
 	})
 }
@@ -147,7 +154,8 @@ const menuData=[
 			dir.setIcon(dir_str)
 			fileList[config.desktop.path].push(dir)
 			editFile.value=dir
-			editFileName=dir.naem
+			editFileName=dir.name
+			initAppList()
 		}
 	}
 ]
@@ -169,10 +177,7 @@ async function editNameBlue(){
 	bus.emit("menu-close")
 	if(editFile.value===null)return true
 	let isFileExist=await readFile("/C/Desktop/"+editFileName)
-	if(isFileExist&&editFile.value.uid===isFileExist.uid){
-
-	}else if(isFileExist||!editFileName){
-
+	if(isFileExist&&editFile.value.uid===isFileExist.uid){}else if(isFileExist||!editFileName){
 		alert("文件名无效或文件已存在")
 		const el=editNameRef.value[0]
 		if(el){
@@ -183,11 +188,20 @@ async function editNameBlue(){
 		}
 		return false
 	}
-	editFile.value.rename(editFileName)
-	editFile.value=null
-	initList()
-	// fileList[config.desktop.path].sort(({createTime:a},{createTime:b})=>a-b)
-	editFileName=""
+	// editFile.value.rename(editFileName)
+	readFile(editFile.value.path).then(res=>{//文件是否存在，遇到bug会删除之前同名的文件，已修复
+		if(res&&res.uid===editFile.value.uid){
+			editFile.value.rename(editFileName)
+		}else{
+			editFile.value.name=editFileName
+			editFile.value.save()
+		}
+		editFile.value=null
+		initList()
+		// fileList[config.desktop.path].sort(({createTime:a},{createTime:b})=>a-b)
+		editFileName=""
+	})
+	
 	return true
 }
 function openApp(item){
@@ -223,7 +237,6 @@ document.addEventListener("keydown",async (e)=>{
 		e.preventDefault()
 		const isName=await editNameBlue()
 		if(!isName) return
-		editFile.value=null
 	}
 })
 </script>

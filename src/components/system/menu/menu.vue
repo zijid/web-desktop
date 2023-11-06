@@ -20,6 +20,7 @@ const position=reactive({
 	x:0,y:0
 })
 const show=ref(false)
+window.show=show
 bus.on("menu-show",({x,y})=>{
 	position.x=x
 	position.y=y
