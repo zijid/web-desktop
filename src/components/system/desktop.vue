@@ -38,7 +38,6 @@ let editFileName=""
 function initAppList(){
 	appList.value=[...systemAppList,...fileList[config.desktop.path]]
 	appList.value.sort(({createTime:a},{createTime:b})=>a-b)
-	console.log(`appList.value:`,appList.value);
 }
 function initList(){
 	readFileAll(config.desktop.path).then(res=>{
@@ -47,12 +46,17 @@ function initList(){
 		// openApp(systemAppList[0])
 	})
 }
+const selectPath=ref(null)
 onMounted(()=>{
 	bg.value=config.desktop.bg.base64||config.desktop.bg.url
 	initList()
 	// bus.on("update:app",(apps)=>{
 	// 	appList.value=[...apps]
 	// })
+	bus.on("select-path",(path)=>{
+		console.log(`path:`,path);
+		selectPath.value=path
+	})
 })
 function select(el){
 	if(document.body.createTextRange) {
@@ -76,6 +80,19 @@ const item=ref({})
 const editFile=ref(null)
 
 let title=ref("")
+const copyFile=ref(null)
+const selectFile=ref(null)
+function copy(file){
+	copyFile.value=file
+}
+function paste(path){
+	if(copyFile.value){
+		console.log(`1:`,1);
+		copyFile.value.copy(path).then(()=>{
+			initList()
+		})
+	}
+}
 async function showMenu(e,i){
 	const isName=await editNameBlue()
 	if(!isName) return
@@ -91,13 +108,11 @@ async function showMenu(e,i){
 	if(title.value&&item.value.title){
 		item.value.title=title.value
 	}
-	if(i){
-		item.value=i
-		// menuDatas.value.push(...i.menu(show))
+	if(i.type==="WebDir"||i.type==="WebFile"){
 		menuDatas.value.push({
 			title:"打开",
 			hander:()=>{
-				createProgress(i.title,i.exec,"C:/用户/桌面","","a b ccc")
+				openApp(i)
 			}
 		})
 		menuDatas.value.push({
@@ -105,13 +120,48 @@ async function showMenu(e,i){
 			hander:()=>{
 				let dir=i
 				editFile.value=dir
-				editFileName=dir.naem
+				editFileName=dir.name
 			}
 		})
+		if(i.pwd!=="/system-app"){
+			menuDatas.value.push({
+				title:"复制",
+				hander:()=>{
+					copy(i)
+				}
+			},
+			{
+				title:"剪切",
+				hander:()=>{
+					createProgress(i.title,i.exec,"C:/用户/桌面","","a b ccc")
+				}
+			},
+			// {
+				// title:"粘贴",
+				// hander:()=>{
+				// 	createProgress(i.title,i.exec,"C:/用户/桌面","","a b ccc")
+			// },
+			{
+				title:"删除",
+				hander:()=>{
+					i.delete()
+					initList()
+				}
+			})
+		}
+		item.value=i
 	}else{
+		menuDatas.value.push(...menuData)
+		if(copyFile.value){
+			menuDatas.value.push({
+				title:"粘贴",
+				hander:()=>{
+					paste(i.path)
+				}
+			})
+		}
 		item.value=""
 	}
-	menuDatas.value.push(...menuData)
 }
 const menuData=[
 	{
@@ -175,9 +225,14 @@ function editNameInput(e){
 const editNameRef=ref(null)
 async function editNameBlue(){
 	bus.emit("menu-close")
+	bus.emit("select-path",config.desktop.path)
 	if(editFile.value===null)return true
 	let isFileExist=await readFile("/C/Desktop/"+editFileName)
-	if(isFileExist&&editFile.value.uid===isFileExist.uid){}else if(isFileExist||!editFileName){
+	console.log(`isFileExist:`,isFileExist);
+	console.log(`editFileName:`,editFileName);
+	if(isFileExist&&editFile.value.uid===isFileExist.uid){
+
+	}else if(isFileExist||!editFileName){
 		alert("文件名无效或文件已存在")
 		const el=editNameRef.value[0]
 		if(el){
@@ -190,6 +245,8 @@ async function editNameBlue(){
 	}
 	// editFile.value.rename(editFileName)
 	readFile(editFile.value.path).then(res=>{//文件是否存在，遇到bug会删除之前同名的文件，已修复
+		console.log(`res:`,res);
+		console.log(`editFile.value:`,editFile.value);
 		if(res&&res.uid===editFile.value.uid){
 			editFile.value.rename(editFileName)
 		}else{
@@ -220,6 +277,7 @@ async function focusApp(item){
 	focusFile.value=item
 }
 document.addEventListener("keydown",async (e)=>{
+	console.log(`e:`,e);
 	if(e.code==="F2"){
 		e.preventDefault()
 		if(editFile.value)return 
@@ -237,12 +295,18 @@ document.addEventListener("keydown",async (e)=>{
 		e.preventDefault()
 		const isName=await editNameBlue()
 		if(!isName) return
+	}else if(e.code==="KeyC"&&e.ctrlKey){
+		copyFile.value=selectFile.value
+	}else if(e.code==="KeyV"&&e.ctrlKey){
+		if(copyFile.value){
+			paste(selectPath.value)
+		}
 	}
 })
 </script>
 
 <template>
-	<div class="desktop" :style="{backgroundImage:`url(${bg})`}" @click="editNameBlue" @contextmenu.prevent="showMenu($event,{alias:'desktop'})" >
+	<div class="desktop" :style="{backgroundImage:`url(${bg})`}" @click="editNameBlue" @contextmenu.prevent="showMenu($event,{alias:'desktop',path:config.desktop.path})" >
 		<Menu :data="menuDatas"></Menu>
 		<div class="app" @focus="focusApp(item)" v-for="(item,index) in appList" :key="item.path" :tabindex="index+1" @contextmenu.prevent.stop="showMenu($event,item)">
 			<!-- <div class="box" @dblclick="createProgress(item.title,item.exec,item.pwd,item.targetPath,item.args)">
@@ -258,7 +322,7 @@ document.addEventListener("keydown",async (e)=>{
 				 v-select
 				 ></div>
 			</div> -->
-			<div class="box" @dblclick="openApp(item)">
+			<div class="box" @dblclick="openApp(item)" @click="selectFile=item">
 				<div class="icon">
 					<div class="svg" v-html="item.icon"></div>
 				</div>

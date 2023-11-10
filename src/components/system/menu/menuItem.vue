@@ -70,8 +70,8 @@ function hander(fun){
 	<div class="bg" @click.stop="hander(data.hander)">
 		<div class="icon" v-html="data.icon"></div>
 		<span>{{data.title}}</span>
-		<div class="icon" v-if="data.children" >
-			<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 12L31 24L19 36" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+		<div class="icon">
+			<svg v-if="data.children"  viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 12L31 24L19 36" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
 		</div>
 	</div>
 	<div class="group" v-if="show&&data.children&&data.children.length" :style="{top:`${elInfo.y}px`,left:`${elInfo.x}px`}" v-menu-item ref="el">
@@ -105,10 +105,17 @@ function hander(fun){
 	display: flex;
     flex-direction: row;
     align-items: center;
+	/* padding-right: 1.5em; */
 }
 .bg>span{
-	margin-left: .5em;
+	margin:0 .5em;
 }
+/* .bg::after{
+	content: "";
+	width: 1em;
+	height: 1em;
+	display: block;
+} */
 .system_menu_item{
 	position: relative;
     color: #000;

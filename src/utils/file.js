@@ -30,21 +30,57 @@ async function _writeFile(path,content){
 async function _removeFile(path){
 	return await db.delete(tableName,path);
 }
-_removeFile("/C/Desktop/ff")
-function dbToFile(params){
+export function dbToFile(params,newFile=false){
 	if(!params)return
 	if(params.type==="WebFile"){
 		const file=new WebFile(params._pwd,params._name)
 		file.init(params)
+		file.uid=utils.uid()
+		file.createTime=Date.now()
 		// file.setIcon(params.icon)
 		file.write(params.content)
 		return file
 	}else{
 		const dir=new WebDir(params._pwd,params._name,params.nickname,params.system)
 		dir.init(params)
+		dir.uid=utils.uid()
+		dir.createTime=Date.now()
 		// dir.setIcon(params.icon)
 		return dir
 	}
+}
+function nameRepetitive(file,index=0){
+	return new Promise(r=>{
+		readFile(file.path).then(res=>{
+			console.log(`res:`,res);
+			if(!res){
+				if(index){
+					let name=file.name
+					const names=name.split('-')
+					if(names.length>1){
+						names[names.length-1] = index
+					}else{
+						names.push(index)
+					}
+					file.name=names.join("-")
+				}
+				file.save()
+				r()
+			}else{
+				if(++index){
+					let name=file.name
+					const names=name.split('-')
+					if(names.length>1){
+						names[names.length-1] = index
+					}else{
+						names.push(index)
+					}
+					file.name=names.join("-")
+				}
+				nameRepetitive(file,index).then(r)
+			}
+		})
+	})
 }
 class FilesystemObject{
 	uid=utils.uid()
@@ -74,6 +110,11 @@ class FilesystemObject{
 	async _readDir(){
 		const dir=await _readAll(this.path)
 		return dir
+	}
+	copy(path){
+		const newFile=dbToFile(this,true)
+		newFile.pwd=path
+		return nameRepetitive(this)
 	}
 	move(toPwd){
 		_removeFile(this.path)
@@ -215,6 +256,18 @@ class WebDir extends FilesystemObject{
 	get name(){
 		return this._name
 	}
+	delete(isDeep=true){
+		super.delete()
+		if(isDeep){
+			_readAll(this.path).then(res=>{
+				console.log(`res:`,res);
+				res.forEach(i=>{
+					dbToFile(i).delete()
+				})
+			})
+		}
+		// this.
+	}
 }
 export {
 	WebFile,
@@ -305,7 +358,7 @@ async function testFile(){
 			name:"文件夹内容.txt",
 		},
 	]
-	readFile("/E/文件夹2").then(res=>{
+	readFile("/C/Desktop/文件夹").then(res=>{
 		if(!res){
 			initDir.forEach(i=>{
 				const pwd=i.pwd
