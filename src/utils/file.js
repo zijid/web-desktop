@@ -35,16 +35,16 @@ export function dbToFile(params,newFile=false){
 	if(params.type==="WebFile"){
 		const file=new WebFile(params._pwd,params._name)
 		file.init(params)
-		file.uid=utils.uid()
-		file.createTime=Date.now()
+		// file.uid=utils.uid()
+		// file.createTime=Date.now()
 		// file.setIcon(params.icon)
 		file.write(params.content)
 		return file
 	}else{
 		const dir=new WebDir(params._pwd,params._name,params.nickname,params.system)
 		dir.init(params)
-		dir.uid=utils.uid()
-		dir.createTime=Date.now()
+		// dir.uid=utils.uid()
+		// dir.createTime=Date.now()
 		// dir.setIcon(params.icon)
 		return dir
 	}
@@ -52,7 +52,6 @@ export function dbToFile(params,newFile=false){
 function nameRepetitive(file,index=0){
 	return new Promise(r=>{
 		readFile(file.path).then(res=>{
-			console.log(`res:`,res);
 			if(!res){
 				if(index){
 					let name=file.name
@@ -86,6 +85,10 @@ class FilesystemObject{
 	uid=utils.uid()
 	createTime=Date.now()
 	icon=""
+	// newFile(){
+	// 	this.uid=utils.uid()
+	// 	this.createTime=Date.now()
+	// }
 	init(obj){
 		this.uid=obj.uid||this.uid
 		this.createTime=obj.createTime||this.createTime
@@ -114,11 +117,67 @@ class FilesystemObject{
 	copy(path){
 		const newFile=dbToFile(this,true)
 		newFile.pwd=path
-		return nameRepetitive(this)
+		// newFile.newFile()
+		newFile.uid=utils.uid()
+		newFile.createTime=Date.now()
+		if(this.type==="WebFile"){
+			return nameRepetitive(newFile)
+		}else{
+			return readFileAll(this.path).then(res=>{
+				const arr=[newFile.save()]
+				arr.push(...res.map(file=>{
+					return file.copy(newFile.path)
+				}))
+				return Promise.all(arr)
+			})
+		}
+	}
+	shear(path){
+		// const newFile=dbToFile(this,true)
+		// newFile.pwd=path
+		// // newFile.newFile()
+		// newFile.uid=utils.uid()
+		// newFile.createTime=Date.now()
+		// return nameRepetitive(newFile)
+		if(this.type==='WebDir'&&path.startsWith(this.path)){
+			/**
+			 * 取消条件
+			 * 粘贴位置是当前文件夹的子路径相等也一样
+			 */
+			return false
+		}
+		/**
+		 * 怎么判断是否是子文件夹
+		 * 粘贴的目录是/C/Desktop 当前文件夹的路径是/C/Desktop 这是同路径跳过
+		 * 
+		 * 粘贴的目录是/C/Desktop/1/2 当前被粘贴文件夹的路径是/C/Desktop/1 这是子路径
+		 */
+		const oldPath=this.path
+		return this.move(path).then(()=>{
+			if(this.type==='WebFile'){
+				return this.save()
+			}
+			return readFileAll(oldPath).then(res=>{
+				console.log(`res:`,res);
+				console.log(`oldPath:`,oldPath);
+				console.log(`this.path:`,this.path);
+				const arr=[this.save()]
+				arr.push(...res.map(file=>{
+					return file.shear(this.path)
+				}))
+				return Promise.all(arr)
+			})
+
+			// return this.save().then(e=>{
+			// 	console.log(`e:`,e);
+			// 	return e
+			// })
+		})
 	}
 	move(toPwd){
-		_removeFile(this.path)
+		const p=_removeFile(this.path)
 		this.pwd=toPwd
+		return p
 		// this.save()
 	}
 	rename(name){
@@ -127,7 +186,17 @@ class FilesystemObject{
 		_writeFile(this.path,this)
 	}
 	delete(){
-		_removeFile(this.path)
+		if(this.type==="WebFile"){
+			return _removeFile(this.path)
+		}else{
+			const arr=[_removeFile(this.path)]
+			return readFileAll(this.path).then(res=>{
+				arr.push(...res.map(file=>{
+					return file.delete()
+				}))
+				return Promise.all(arr)
+			})
+		}
 	}
 }
 function pathJoin(...paths){
@@ -260,7 +329,6 @@ class WebDir extends FilesystemObject{
 		super.delete()
 		if(isDeep){
 			_readAll(this.path).then(res=>{
-				console.log(`res:`,res);
 				res.forEach(i=>{
 					dbToFile(i).delete()
 				})
@@ -293,6 +361,14 @@ async function testFile(){
 		{
 			pwd:"/C/Desktop",
 			name:"文件夹",
+		},
+		{
+			pwd:"/C/Desktop",
+			name:"文件夹2",
+		},
+		{
+			pwd:"/C/Desktop/文件夹2",
+			name:"文件夹2-1",
 		},
 		{
 			pwd:"/C",

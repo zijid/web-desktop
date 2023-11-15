@@ -12,6 +12,7 @@ await init()
 initApp()
 const config=getConfig()
 console.log(`配置config:`,config);
+const desktop=ref(null)
 const appList=ref([...data])
 // const appList=computed(()=>{
 // 	return fileList[config.desktop.path]
@@ -39,17 +40,93 @@ function initAppList(){
 	appList.value=[...systemAppList,...fileList[config.desktop.path]]
 	appList.value.sort(({createTime:a},{createTime:b})=>a-b)
 }
-function initList(){
-	readFileAll(config.desktop.path).then(res=>{
-		fileList[config.desktop.path]=res
+function initList(path){
+	readFileAll(path).then(res=>{
+		fileList[path]=res
 		initAppList()
 		// openApp(systemAppList[0])
 	})
 }
 const selectPath=ref(null)
+const selectList=ref([])//复制剪切粘贴删除时候使用值当前在selectAppList获取
+const isShear=ref(false)
+const selectAppList=ref([])//选中的应用
+function selectAppListEmpty(){
+	selectAppList.value.splice(0,selectAppList.value.length)
+}
+async function selectApp(e,file){
+	if(!await editNameBlue())return 
+	if(e.ctrlKey){
+		const index=selectAppList.value.findIndex(i=>i.uid===file.uid)
+		if(index>-1){
+			selectAppList.value.splice(index,1)
+		}else{
+			selectAppList.value.push(file)
+		}
+	}else{
+		selectAppListEmpty()
+		selectAppList.value.push(file)
+	}
+	if(selectAppList.value[0]){
+		focusFile.value=selectAppList.value[0]
+	}
+}
+bus.on("copy",()=>{
+	isShear.value=false
+	selectList.value.splice(0,selectList.value.length)
+	selectList.value.push(...selectAppList.value)
+})
+bus.on("shear",()=>{
+	isShear.value=true
+	selectList.value.splice(0,selectList.value.length)
+	selectList.value.push(...selectAppList.value)
+})
+bus.on("paste",(path)=>{
+	if(selectList.value){
+		const arr=[]
+		let fun
+		if(isShear.value===false){
+			fun=file=>{
+				arr.push(file.copy(path))
+			}
+		}else{
+			fun=file=>{
+				arr.push(file.shear(path))
+			}
+		}
+		const pwds=new Set(selectList.value.filter(i=>i.pwd!="/system-app").map(i=>i.pwd))
+		selectList.value.filter(i=>i.pwd!="/system-app").forEach(fun)
+		Promise.all(arr).then((e)=>{
+			
+			initList(path)
+			pwds.forEach(initList)//更新全部复制的内容
+
+			
+			selectList.value.splice(0,selectList.value.length)
+			if(desktop.value)
+				desktop.value.focus()
+		})
+		// copyFile.value.copy(path).then(()=>{
+		// 	initList()
+		// 	desktop.value.focus()
+		// })
+	}
+})
+setInterval(() => {
+	console.log(`selectList.value:`,selectList.value);
+}, 1000);
+bus.on("delete",()=>{
+	selectList.value.splice(0,selectList.value.length)
+	selectList.value.push(...selectAppList.value)
+	const pwds=new Set(selectList.value.filter(i=>i.pwd!="/system-app").map(i=>i.pwd))
+	console.log(`selectList.value:`,selectList.value);
+	Promise.all(selectList.value.filter(i=>i.pwd!="/system-app").map(i=>i.delete())).then(res=>{
+		pwds.forEach(initList)
+	})
+})
 onMounted(()=>{
 	bg.value=config.desktop.bg.base64||config.desktop.bg.url
-	initList()
+	initList(config.desktop.path)
 	// bus.on("update:app",(apps)=>{
 	// 	appList.value=[...apps]
 	// })
@@ -82,16 +159,19 @@ const editFile=ref(null)
 let title=ref("")
 const copyFile=ref(null)
 const selectFile=ref(null)
-function copy(file){
-	copyFile.value=file
+function copy(){
+	bus.emit("copy")
+	// copyFile.value=file
+}
+function shear(){
+	bus.emit("shear")
 }
 function paste(path){
-	if(copyFile.value){
-		console.log(`1:`,1);
-		copyFile.value.copy(path).then(()=>{
-			initList()
-		})
-	}
+	selectAppListEmpty()
+	bus.emit("paste",path)
+}
+function deleteFile(){
+	bus.emit("delete")
 }
 async function showMenu(e,i){
 	const isName=await editNameBlue()
@@ -101,6 +181,12 @@ async function showMenu(e,i){
 		x:e.clientX,
 		y:e.clientY
 	})
+	
+	const index=selectAppList.value.findIndex(item=>item.uid===i.uid)
+	if(index==-1){
+		selectAppListEmpty()
+		selectAppList.value.push(i)
+	}
 	menuDatas.value.splice(0,menuDatas.value.length)
 	if(item.value.edit){
 		item.value.edit=false
@@ -127,13 +213,13 @@ async function showMenu(e,i){
 			menuDatas.value.push({
 				title:"复制",
 				hander:()=>{
-					copy(i)
+					copy()
 				}
 			},
 			{
 				title:"剪切",
 				hander:()=>{
-					createProgress(i.title,i.exec,"C:/用户/桌面","","a b ccc")
+					shear()
 				}
 			},
 			// {
@@ -144,19 +230,18 @@ async function showMenu(e,i){
 			{
 				title:"删除",
 				hander:()=>{
-					i.delete()
-					initList()
+					deleteFile()
 				}
 			})
 		}
 		item.value=i
 	}else{
 		menuDatas.value.push(...menuData)
-		if(copyFile.value){
+		if(selectList.value.length){
 			menuDatas.value.push({
 				title:"粘贴",
 				hander:()=>{
-					paste(i.path)
+					paste("/C/Desktop/文件夹"||i.path)
 				}
 			})
 		}
@@ -228,11 +313,10 @@ async function editNameBlue(){
 	bus.emit("select-path",config.desktop.path)
 	if(editFile.value===null)return true
 	let isFileExist=await readFile("/C/Desktop/"+editFileName)
-	console.log(`isFileExist:`,isFileExist);
-	console.log(`editFileName:`,editFileName);
 	if(isFileExist&&editFile.value.uid===isFileExist.uid){
-
-	}else if(isFileExist||!editFileName){
+		isFileExist=undefined
+	}
+	if(isFileExist||!editFileName){
 		alert("文件名无效或文件已存在")
 		const el=editNameRef.value[0]
 		if(el){
@@ -244,7 +328,7 @@ async function editNameBlue(){
 		return false
 	}
 	// editFile.value.rename(editFileName)
-	readFile(editFile.value.path).then(res=>{//文件是否存在，遇到bug会删除之前同名的文件，已修复
+	readFile(editFile.value.path).then(res=>{
 		console.log(`res:`,res);
 		console.log(`editFile.value:`,editFile.value);
 		if(res&&res.uid===editFile.value.uid){
@@ -253,8 +337,8 @@ async function editNameBlue(){
 			editFile.value.name=editFileName
 			editFile.value.save()
 		}
+		initList(editFile.value.pwd)
 		editFile.value=null
-		initList()
 		// fileList[config.desktop.path].sort(({createTime:a},{createTime:b})=>a-b)
 		editFileName=""
 	})
@@ -272,12 +356,14 @@ function openApp(item){
 }
 const focusFile=ref(null)
 async function focusApp(item){
-	const isName=await editNameBlue()
+	let isName=await editNameBlue()
+	// if(focusFile.value){
+	// 	isName=await editNameBlue()
+	// }
 	if(!isName) return
 	focusFile.value=item
 }
 document.addEventListener("keydown",async (e)=>{
-	console.log(`e:`,e);
 	if(e.code==="F2"){
 		e.preventDefault()
 		if(editFile.value)return 
@@ -296,19 +382,24 @@ document.addEventListener("keydown",async (e)=>{
 		const isName=await editNameBlue()
 		if(!isName) return
 	}else if(e.code==="KeyC"&&e.ctrlKey){
-		copyFile.value=selectFile.value
+		copy()
+	}else if(e.code==="KeyX"&&e.ctrlKey){
+		shear()
 	}else if(e.code==="KeyV"&&e.ctrlKey){
-		if(copyFile.value){
-			paste(selectPath.value)
+		if(selectList.value.length){
+			paste("/C/Desktop/文件夹"||i.path)
 		}
+	}else if(e.code==="Delete"){
+		deleteFile()
 	}
 })
 </script>
 
 <template>
-	<div class="desktop" :style="{backgroundImage:`url(${bg})`}" @click="editNameBlue" @contextmenu.prevent="showMenu($event,{alias:'desktop',path:config.desktop.path})" >
+	<div ref="desktop" tabindex="1" class="desktop" :style="{backgroundImage:`url(${bg})`}" @click.stop="selectAppListEmpty" @click="editNameBlue" @contextmenu.prevent="showMenu($event,{alias:'desktop',path:config.desktop.path})" >
 		<Menu :data="menuDatas"></Menu>
-		<div class="app" @focus="focusApp(item)" v-for="(item,index) in appList" :key="item.path" :tabindex="index+1" @contextmenu.prevent.stop="showMenu($event,item)">
+		<!-- @focus="focusApp(item)" -->
+		<div class="app" :class="{appFocus:selectAppList.findIndex(i=>i.uid===item.uid)!==-1||(editFile&&editFile.uid===item.uid)}" v-for="(item,index) in appList" :key="item.path" :tabindex="index+1" @contextmenu.prevent.stop="showMenu($event,item)">
 			<!-- <div class="box" @dblclick="createProgress(item.title,item.exec,item.pwd,item.targetPath,item.args)">
 				<div class="icon" v-html="item.icon"></div>
 				<div class="name" v-if="!item.edit">
@@ -322,7 +413,7 @@ document.addEventListener("keydown",async (e)=>{
 				 v-select
 				 ></div>
 			</div> -->
-			<div class="box" @dblclick="openApp(item)" @click="selectFile=item">
+			<div class="box" @dblclick="openApp(item)" @click.stop="selectApp($event,item)">
 				<div class="icon">
 					<div class="svg" v-html="item.icon"></div>
 				</div>
