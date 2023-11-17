@@ -4,27 +4,20 @@ import menuItem from "./menuItem.vue";
 import {bus} from "@/App"
 const props=defineProps({
 	position:{
-		type:Object,
 		default:()=>({x:0,y:0})
-	},
-	data:{
-		type:Array,
-		default:()=>([])
-	},
-	// show:{
-	// 	type:Boolean,
-	// 	default:false
-	// }
+	}
 })
+const data=ref([])
 const position=reactive({
 	x:0,y:0
 })
 const show=ref(false)
 window.show=show
-bus.on("menu-show",({x,y})=>{
+bus.on("menu-show",({x,y,data:d})=>{
 	position.x=x
 	position.y=y
 	show.value=true
+	data.value=d
 })
 bus.on("menu-close",()=>{
 	show.value=false

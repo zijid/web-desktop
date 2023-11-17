@@ -1,6 +1,7 @@
 <script setup>
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
-import {systemDirectory} from "../../App"
+
+import {bus,systemDirectory} from "@/App"
 import {readFileAll,readFile} from "@/utils/file"
 import Win from "../window/window.vue";
 import {fileList} from "@/hooks"
@@ -23,6 +24,8 @@ const tempPath=ref("")
 const history=[]
 const isLoad=ref(false)
 const index=ref(0)
+
+const focusFile=ref(null)
 const dir=computed(()=>{
 	return fileList[tempPath.value]
 })
@@ -40,6 +43,7 @@ if(!systemDirectory){
 }
 watch(()=>tempPath.value,()=>{
 	search.value=tempPath.value
+	bus.emit("select-path",tempPath.value)
 	isLoad.value=true
 	const str=search.value||'/'
 	if(str==='/'){
@@ -103,10 +107,216 @@ function skip(){
 function find(){
 	alert("搜索未制作")
 }
+function f(){
+	console.log(`1:`,1);
+	bus.emit("select-path",tempPath.value)
+}
+
+const selectAppList=ref([])//选中的应用
+function selectAppListEmpty(){
+	selectAppList.value.splice(0,selectAppList.value.length)
+}
+async function selectApp(e,file){
+	bus.emit("menu-close")
+	if(!await editNameBlue())return 
+	if(e.ctrlKey){
+		const index=selectAppList.value.findIndex(i=>i.uid===file.uid)
+		if(index>-1){
+			selectAppList.value.splice(index,1)
+		}else{
+			selectAppList.value.push(file)
+		}
+	}else{
+		selectAppListEmpty()
+		selectAppList.value.push(file)
+	}
+	if(selectAppList.value[0]){
+		focusFile.value=selectAppList.value[0]
+	}
+}
+function noSelect(){
+	selectAppListEmpty()
+	editNameBlue()
+	bus.emit("menu-close")
+}
+
+let editFileName=""
+const menuDatas=ref([])
+const editFile=ref(null)
+async function showMenu(e,i){
+	const isName=await editNameBlue()
+	if(!isName) return
+	const index=selectAppList.value.findIndex(item=>item.uid===i.uid)
+	if(index==-1){
+		selectAppListEmpty()
+		selectAppList.value.push(i)
+	}
+	menuDatas.value.splice(0,menuDatas.value.length)
+	
+	if(i.type==="WebDir"||i.type==="WebFile"){
+		menuDatas.value.push({
+			title:"打开",
+			hander:()=>{
+				openApp(i)
+			}
+		})
+		menuDatas.value.push({
+			title:"重命名",
+			hander:()=>{
+				console.log(`i:`,i);
+				let dir=i
+				editFile.value=dir
+				editFileName=dir.name
+			}
+		})
+		if(i.pwd!=="/system-app"){
+			menuDatas.value.push({
+				title:"复制",
+				hander:()=>{
+					copy()
+				}
+			},
+			{
+				title:"剪切",
+				hander:()=>{
+					shear()
+				}
+			},
+			// {
+				// title:"粘贴",
+				// hander:()=>{
+				// 	createProgress(i.title,i.exec,"C:/用户/桌面","","a b ccc")
+			// },
+			{
+				title:"删除",
+				hander:()=>{
+					deleteFile()
+				}
+			})
+		}
+	}else{
+		menuDatas.value.push(...menuData)
+		if(selectList.value.length){
+			menuDatas.value.push({
+				title:"粘贴",
+				hander:()=>{
+					paste("/C/Desktop/文件夹"||i.path)
+				}
+			})
+		}
+	}
+	
+	bus.emit("menu-show",{
+		x:e.clientX,
+		y:e.clientY,
+		data:menuDatas.value
+	})
+}
+function editNameInput(e){
+	editFileName=e.target.textContent;
+}
+const vSelect = {
+	mounted: select
+}
+function select(el){
+	if(document.body.createTextRange) {
+		var range = document.body.createTextRange();
+		range.moveToElementText(text);
+		range.select();
+	} else if (window.getSelection) {
+		var selection = window.getSelection();
+		var range = document.createRange();
+		range.selectNodeContents(el);
+		selection.removeAllRanges();
+		selection.addRange(range);
+	} else {
+		alert("none");
+	}
+}
+
+const editNameRef=ref(null)
+async function editNameBlue(){
+	bus.emit("menu-close")
+	// bus.emit("select-path",config.desktop.path)
+	if(editFile.value===null)return true
+	console.log(`editFile.value.pwd+"/"+editFileName:`,editFile.value.pwd+"/"+editFileName);
+	let isFileExist=await readFile(editFile.value.pwd+editFileName)
+	if(isFileExist&&editFile.value.uid===isFileExist.uid){
+		isFileExist=undefined
+	}
+	if(isFileExist||!editFileName){
+		alert("文件名无效或文件已存在")
+		const el=editNameRef.value[0]
+		if(el){
+			nextTick(()=>{
+				el.focus()
+				select(el)
+			})
+		}
+		return false
+	}
+	// editFile.value.rename(editFileName)
+	readFile(editFile.value.path).then(res=>{
+		console.log(`res:`,res);
+		console.log(`editFile.value:`,editFile.value);
+		if(res&&res.uid===editFile.value.uid){
+			editFile.value.rename(editFileName)
+		}else{
+			editFile.value.name=editFileName
+			editFile.value.save()
+		}
+		initList(editFile.value.pwd)
+		editFile.value=null
+		// fileList[config.desktop.path].sort(({createTime:a},{createTime:b})=>a-b)
+		editFileName=""
+	})
+	
+	return true
+}
+function initList(path){
+	readFileAll(path).then(res=>{
+		fileList[path]=res
+		// initAppList()
+		// openApp(systemAppList[0])
+	})
+}
+
+
+
+async function keydown(e){
+	if(e.code==="F2"){
+		e.preventDefault()
+		if(editFile.value)return 
+		const isName=await editNameBlue()
+		if(!isName) return
+		if(focusFile.value){
+			editFile.value=focusFile.value
+			editFileName=editFile.value.name
+		}
+	}else if(e.code==="Tab"){
+		const isName=await editNameBlue()
+		if(!isName) return
+		editFile.value=null
+	}else if(e.code==="Enter"&&!e.shiftKey){
+		e.preventDefault()
+		const isName=await editNameBlue()
+		if(!isName) return
+	}else if(e.code==="KeyC"&&e.ctrlKey){
+		copy()
+	}else if(e.code==="KeyX"&&e.ctrlKey){
+		shear()
+	}else if(e.code==="KeyV"&&e.ctrlKey){
+		if(selectList.value.length){
+			paste("/C/Desktop/文件夹"||i.path)
+		}
+	}else if(e.code==="Delete"){
+		deleteFile()
+	}
+}
 </script>
 
 <template>
-<Win :path="path">
+<Win :path="path" @focus="f" v-focus @click="editNameBlue" @keydown.stop="keydown">
 	<template v-slot:title>
 		文件管理器<span class="path" v-text="tempPath"></span>
 	</template>
@@ -138,29 +348,79 @@ function find(){
 			title="搜索"
 			@keydown.enter="find">
 		</div>
-		<div class="body">
+		<div class="body" @click.stop="noSelect">
 
 			<div class="loading d" v-if="isLoad===true">加载中</div>
 			<template v-else>
 				<!-- <zi-dir style="width: 140px;" @open="openDir" :data="dirData1"></zi-dir> -->
-				<template class="dir_box" v-for="file in fileList[tempPath]" :key="file.uid+file.name">
-					<div :class="[file.system?'root_dir':'dir_file']" v-if="file.type==='WebDir'" @dblclick="open(file)" >
+				<template v-for="file in fileList[tempPath]" :key="file.uid+file.name">
+					<div
+					@contextmenu.prevent.stop="showMenu($event,file)"
+					@click.stop="selectApp($event,file)"
+					:class="[file.system?'root_dir':'dir_file',selectAppList.findIndex(i=>i.uid===file.uid)!==-1?'dir_file-hover':'']" v-if="file.type==='WebDir'" @dblclick="open(file)" >
 						<div style="font-size: 24px;">
 							<zi-icon name="user" v-if="file.system"></zi-icon>
 							<zi-icon name="folder-close" v-else></zi-icon>
 						</div>
 						<div class="root_dir_name">
-							{{file.nickname||file.name}}
-							<template v-if="file.system&&file.nickname">({{file.name}})</template>
+							
+							<template v-if="file.system&&file.nickname">
+								{{file.nickname||file.name}}
+								<div ref="editNameRef"
+								v-if="editFile&&editFile.uid===file.uid"
+								class="name editName"
+								v-focus v-text="file.name"
+									@input="editNameInput"
+									@click.stop
+									@dblclick.stop
+									contenteditable=""
+									v-select
+								></div>
+								<div class="name" v-else>
+									({{file.name}})
+								</div>
+							</template>
+							<template v-else>
+								<div ref="editNameRef"
+								v-if="editFile&&editFile.uid===file.uid"
+								class="name editName"
+								v-focus v-text="file.name"
+									@input="editNameInput"
+									@click.stop
+									@dblclick.stop
+									contenteditable=""
+									v-select
+								></div>
+								<div class="name" v-else>
+									{{file.nickname||file.name}}
+								</div>
+							</template>
 						</div>
 					</div>
-					<div class="dir_file" v-else @dblclick="open(file)">
+					<div
+					@contextmenu.prevent.stop="showMenu($event,file)"
+					@click.stop="selectApp($event,file)"
+					:class="[selectAppList.findIndex(i=>i.uid===file.uid)!==-1?'dir_file-hover':'']" 
+					class="dir_file" v-else @dblclick="open(file)">
 						<div style="font-size: 24px;">
 							<zi-icon name="file"></zi-icon>
 						</div>
-						<div class="name">
-							{{file.nickname||file.name}}
+						<div ref="editNameRef"
+							v-if="editFile&&editFile.uid===file.uid"
+							class="name editName"
+							v-focus v-text="file.name"
+							@input="editNameInput"
+							@click.stop
+							@dblclick.stop
+							contenteditable=""
+							v-select
+						></div>
+						<div class="name" v-else>
+							({{file.name}})
 						</div>
+						<!-- <div class="name">
+							{{file.nickname||file.name}}
+						</div> -->
 					</div>
 				</template>
 			</template>
@@ -316,7 +576,11 @@ function find(){
     align-items: center;
 }
 .dir_file:hover{
-	background-color: rgb(174 228 253);
+	background-color: rgb(214, 214, 214)
+}
+.body .dir_file-hover{
+	background-color: #3f51b5;
+	color: #fff;
 }
 .name{
 	width: 100%;

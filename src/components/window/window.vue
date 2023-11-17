@@ -111,10 +111,10 @@ onUnmounted(()=>{
 <template>
 	<div :tabindex="winInfo.pid" class="win" ref="win" v-show="winInfo.z>-1" :class="{max:windowState.isMax}" :style="{left:windowState.x+'px',top:windowState.y+'px',zIndex:winInfo.z,width:windowState.w+'%',height:`calc( ${windowState.h}% - var(--tab-height) )`}" @mousedown="activeApp">
 		<div :title="title" class="header" ref="winMove" v-move="windowState" @move="move" @dblclick="max(winInfo.pid)">
-			<div style="pointer-events: none;height: 1.2em;">
+			<div class="winTitle">
 				<slot name="title"></slot>
 			</div>
-			<div class="handle">
+			<div class="handle" @dblclick.stop>
 				<div class="min" @focus.stop @mousedown.stop @click.stop="hideWindow(winInfo.pid)">━</div>
 				<div class="max" @click.stop="max(winInfo.pid)">
 					<svg width="12" height="12" xmlns="http://www.w3.org/2000/svg" data-v-c30228d9="" v-if="windowState.isMax===true">
@@ -173,6 +173,13 @@ onUnmounted(()=>{
 }
 .path{
 	cursor: auto;
+}
+.winTitle{
+	pointer-events: none;
+	height: 1.2em;
+	width: calc( 100% - 6em );
+	text-overflow: ellipsis;
+	overflow: hidden;
 }
 .handle{
 	position: absolute;

@@ -181,9 +181,20 @@ class FilesystemObject{
 		// this.save()
 	}
 	rename(name){
-		_removeFile(this.path)
+		const path=this.path
+		_removeFile(path)
 		this.name=name
-		_writeFile(this.path,this)
+		if(this.type==="WebFile"){
+			return _writeFile(this.path,this)
+		}else{
+			const arr=[_writeFile(this.path,this)]
+			return readFileAll(path).then(res=>{
+				arr.push(...res.map(file=>{
+					return file.shear(this.path)
+				}))
+				return Promise.all(arr)
+			})
+		}
 	}
 	delete(){
 		if(this.type==="WebFile"){

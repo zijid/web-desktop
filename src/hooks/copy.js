@@ -1,6 +1,4 @@
-<script setup>
-import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick,defineAsyncComponent} from "vue";
-import Menu from "@/components/system/menu/menu.vue";
+import {ref,reactive,markRaw} from "vue"
 import {createProgress} from "@/system/progress"
 
 import {showWindow,showDesktop} from "@/system/window";
@@ -8,33 +6,7 @@ import {exec,bus,initApp,selectAppList} from "@/App"
 import {addApp,openAppList,data,windowList,progressList,activeAppPid,fileList} from "@/hooks";
 import {init,getConfig} from "@/system"
 import {dir_str,readFileAll,readFile,WebDir} from "@/utils/file"
-await init()
-initApp()
-const config=getConfig()
-console.log(`配置config:`,config);
-const desktop=ref(null)
-const appList=ref([...data])
-// const appList=computed(()=>{
-// 	return fileList[config.desktop.path]
-// })
-const bg=ref("")
-const systemAppList=[]
-try {
-	readFileAll("/system-app").then(res=>{
-		if(res.length===0){
-			config['desktop']['system-app'].forEach(i=>{
-				const systemDir=new WebDir(i.pwd,i.name)
-				systemDir.init(i)
-				systemAppList.push(systemDir)
-				systemDir.save()
-			})
-		}else{
-			systemAppList.push(...res)
-		}
-	})
-} catch (error) {
-	console.error("加载默认桌面app失败："+error)
-}
+
 let editFileName=""
 function initAppList(){
 	appList.value=[...systemAppList,...fileList[config.desktop.path]]
@@ -48,7 +20,7 @@ function initList(path){
 	})
 }
 const selectPath=ref(null)
-const selectList=ref([])//复制剪切粘贴删除时候使用值当前在selectAppList获取
+const selectList=ref([])//复制剪切粘贴删除时候使用值当前在selectAppList获取 相对于剪切板
 const isShear=ref(false)
 function selectAppListEmpty(){
 	selectAppList.value.splice(0,selectAppList.value.length)
@@ -107,10 +79,83 @@ bus.on("paste",()=>{
 			if(desktop.value)
 				desktop.value.focus()
 		})
-		// copyFile.value.copy(path).then(()=>{
-		// 	initList()
-		// 	desktop.value.focus()
-		// })
+	}
+})
+bus.on("show-menu",async ({e,i})=>{
+	console.log(`e,i:`,e,i);
+	const isName=await editNameBlue()
+	if(!isName) return
+	bus.emit("menu-show",{
+		type:"menu",
+		x:e.clientX,
+		y:e.clientY
+	})
+	
+	const index=selectAppList.value.findIndex(item=>item.uid===i.uid)
+	if(index==-1){
+		selectAppListEmpty()
+		selectAppList.value.push(i)
+	}
+	menuDatas.value.splice(0,menuDatas.value.length)
+	if(item.value.edit){
+		item.value.edit=false
+	}
+	if(title.value&&item.value.title){
+		item.value.title=title.value
+	}
+	if(i.type==="WebDir"||i.type==="WebFile"){
+		menuDatas.value.push({
+			title:"打开",
+			hander:()=>{
+				openApp(i)
+			}
+		})
+		menuDatas.value.push({
+			title:"重命名",
+			hander:()=>{
+				console.log(`i:`,i);
+				let dir=i
+				editFile.value=dir
+				editFileName=dir.name
+			}
+		})
+		if(i.pwd!=="/system-app"){
+			menuDatas.value.push({
+				title:"复制",
+				hander:()=>{
+					copy()
+				}
+			},
+			{
+				title:"剪切",
+				hander:()=>{
+					shear()
+				}
+			},
+			// {
+				// title:"粘贴",
+				// hander:()=>{
+				// 	createProgress(i.title,i.exec,"C:/用户/桌面","","a b ccc")
+			// },
+			{
+				title:"删除",
+				hander:()=>{
+					deleteFile()
+				}
+			})
+		}
+		item.value=i
+	}else{
+		menuDatas.value.push(...menuData)
+		if(selectList.value.length){
+			menuDatas.value.push({
+				title:"粘贴",
+				hander:()=>{
+					paste("/C/Desktop/文件夹"||i.path)
+				}
+			})
+		}
+		item.value=""
 	}
 })
 setInterval(() => {
@@ -182,72 +227,7 @@ function deleteFile(){
 	bus.emit("delete")
 }
 async function showMenu(e,i){
-	const isName=await editNameBlue()
-	if(!isName) return
-	const index=selectAppList.value.findIndex(item=>item.uid===i.uid)
-	if(index==-1){
-		selectAppListEmpty()
-		selectAppList.value.push(i)
-	}
-	menuDatas.value.splice(0,menuDatas.value.length)
-	if(i.type==="WebDir"||i.type==="WebFile"){
-		menuDatas.value.push({
-			title:"打开",
-			hander:()=>{
-				openApp(i)
-			}
-		})
-		menuDatas.value.push({
-			title:"重命名",
-			hander:()=>{
-				console.log(`i:`,i);
-				let dir=i
-				editFile.value=dir
-				editFileName=dir.name
-			}
-		})
-		if(i.pwd!=="/system-app"){
-			menuDatas.value.push({
-				title:"复制",
-				hander:()=>{
-					copy()
-				}
-			},
-			{
-				title:"剪切",
-				hander:()=>{
-					shear()
-				}
-			},
-			// {
-				// title:"粘贴",
-				// hander:()=>{
-				// 	createProgress(i.title,i.exec,"C:/用户/桌面","","a b ccc")
-			// },
-			{
-				title:"删除",
-				hander:()=>{
-					deleteFile()
-				}
-			})
-		}
-	}else{
-		menuDatas.value.push(...menuData)
-		if(selectList.value.length){
-			menuDatas.value.push({
-				title:"粘贴",
-				hander:()=>{
-					paste("/C/Desktop/文件夹"||i.path)
-				}
-			})
-		}
-	}
-	
-	bus.emit("menu-show",{
-		x:e.clientX,
-		y:e.clientY,
-		data:menuDatas.value
-	})
+	bus.emit("show-menu",{e,i})
 }
 const menuData=[
 	{
@@ -395,64 +375,3 @@ document.addEventListener("keydown",async (e)=>{
 		deleteFile()
 	}
 })
-function f(){
-	bus.emit("select-path",config.desktop.path)
-}
-
-</script>
-<template>
-	<div :style="{opacity:opacity}" style="transition: opacity 0.3s;position: fixed;right: 1em;text-shadow: 1px 1px 1px #fff;color: #000;font-size: 12px;">当前焦点目录:{{ selectPath }}</div>
-	<div @focus="f" ref="desktop" tabindex="1" class="desktop" :style="{backgroundImage:`url(${bg})`}" @click.stop="selectAppListEmpty" @click="editNameBlue" @contextmenu.prevent="showMenu($event,{alias:'desktop',path:config.desktop.path})" >
-		<Menu></Menu>
-		<!-- @focus="focusApp(item)" -->
-		<div class="app" :class="{appFocus:selectAppList.findIndex(i=>i.uid===item.uid)!==-1||(editFile&&editFile.uid===item.uid)}" v-for="(item,index) in appList" :key="item.path" :tabindex="index+1" @contextmenu.prevent.stop="showMenu($event,item)">
-			<!-- <div class="box" @dblclick="createProgress(item.title,item.exec,item.pwd,item.targetPath,item.args)">
-				<div class="icon" v-html="item.icon"></div>
-				<div class="name" v-if="!item.edit">
-					{{item.title}}
-				</div>
-				<div class="name editName" v-else v-focus v-text="data[index].title"
-				 @input="editNameInput"
-				 @click.stop
-				 @dblclick.stop
-				 contenteditable=""
-				 v-select
-				 ></div>
-			</div> -->
-			<div class="box" @dblclick="openApp(item)" @click.stop="selectApp($event,item)">
-				<div class="icon">
-					<div class="svg" v-html="item.icon"></div>
-				</div>
-				<!-- 可以优化为url这样多个svg就只有一个请求了 ，不过影响也不大吧-->
-					<!-- <img width="24" height="24" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNSA4QzUgNi44OTU0MyA1Ljg5NTQzIDYgNyA2SDE5TDI0IDEySDQxQzQyLjEwNDYgMTIgNDMgMTIuODk1NCA0MyAxNFY0MEM0MyA0MS4xMDQ2IDQyLjEwNDYgNDIgNDEgNDJIN0M1Ljg5NTQzIDQyIDUgNDEuMTA0NiA1IDQwVjhaIiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik00MyAyMkg1IiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik01IDE2VjI4IiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTQzIDE2VjI4IiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+" alt=""> -->
-				<div ref="editNameRef" v-if="editFile&&editFile.uid===item.uid" class="name editName" v-focus v-text="item.name"
-					@input="editNameInput"
-					@click.stop
-					@dblclick.stop
-					contenteditable=""
-					v-select
-				 ></div>
-				<div class="name" v-else>
-					{{item.name}}
-				</div>
-			</div>
-		</div>
-		<div id="windows">
-			<!-- <Notepad></Notepad>
-			<Explorer></Explorer> -->
-			<template v-for="(progress,index) in progressList" :key="progress.pid">
-				<component :is="progress.exec" v-bind="progress" ref="app"></component>
-			</template>
-		</div>
-		<div class="tab"><!-- v-show="progressList.length"-->
-			<template v-for="(progress,index) in progressList" :key="progress.pid">
-				<div v-if="windowList.find(i=>i.pid===progress.pid)" class="app_item" :class="{active_app:activeAppPid===progress.pid}" @click="showApp(progress.pid,index)">
-					{{ progress.title }}
-				</div>
-			</template>
-			<div class="showDesktop" @click="showDesktop"></div>
-		</div>
-	</div>
-</template>
-
-<style scoped src="./desktop.css"></style>
