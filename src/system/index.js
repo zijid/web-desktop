@@ -86,7 +86,7 @@ export async function init(){
 					return pwd
 				})
 				console.log(`path:`,path);
-				arr.push(path)
+				pwds.push(path)
 				pwds=new Set(pwds)
 				Promise.all(arr).then((e)=>{
 					pwds.forEach(initList)//更新全部复制的内容
@@ -151,7 +151,6 @@ export function initList(path){
 		console.log(`path,res:`,path,res);
 		fileList[path]=res
 		console.log(`fileList:`,fileList);
-
 		// openApp(systemAppList[0])
 	})
 }
