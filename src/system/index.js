@@ -1,5 +1,9 @@
 //初始化
 import {IndexedDB,utils} from "zijid-ui"
+import {bus} from "@/App"
+import {fileList,selectList,isShear} from "@/hooks";
+import {dir_str,readFileAll,readFile,WebDir} from "@/utils/file"
+
 export const db = new IndexedDB("web-desktop")
 export const tableName="web-desktop-config"
 let system_config=null
@@ -45,15 +49,74 @@ export async function init(){
 				system_config=res
 				r("初始化配置完成")
 			}).catch(err=>{
-				console.log(`err:`,err);
+				console.error(`err:`,err);
 				j("初始化配置失败")
 			})
 		}).catch(err=>{
 			j("初始化表失败，初始化配置失败")
 		})
 	})
-	// console.log(` await db.find(tableName,path):`,await db.find(tableName,"config-versions"));
-	loadingArr.push(DBInit,initConfg)//初始化db,初始化配置
+	const initFileFunction=new Promise((r)=>{
+		bus.on("copy",(selectArr)=>{
+			isShear.value=false
+			selectList.value=selectArr
+		})
+		bus.on("shear",(selectArr)=>{
+			isShear.value=true
+			selectList.value=selectArr
+		})
+		bus.on("paste",(path)=>{
+			if(!path)return
+			if(selectList.value){
+				const arr=[]
+				let fun
+				if(isShear.value===false){
+					fun=file=>{
+						arr.push(file.copy(path))
+					}
+				}else{
+					fun=file=>{
+						arr.push(file.shear(path))
+					}
+				}
+				const selectFilter=selectList.value.filter(i=>i.pwd!="/system-app"&&i.pwd!="/")
+				let pwds=selectFilter.map(i=>{
+					const pwd=i.pwd
+					fun(i)
+					return pwd
+				})
+				console.log(`path:`,path);
+				arr.push(path)
+				pwds=new Set(pwds)
+				Promise.all(arr).then((e)=>{
+					pwds.forEach(initList)//更新全部复制的内容
+					if(isShear.value===true){
+						selectList.value=[]
+					}
+					// if(desktop.value)
+					// 	desktop.value.focus()
+				})
+			}
+		})
+		bus.on("delete",(selectArr)=>{
+			selectList.value=selectArr
+			const selectFilter=selectList.value.filter(i=>i.pwd!="/system-app"&&i.pwd!="/")
+			const pwds=new Set(selectFilter.map(i=>{
+				return i.pwd
+			}))
+			const paths=new Set(selectFilter.map(i=>{
+				return i.path
+			}))
+			Promise.all(selectList.value.map(i=>i.delete())).then(()=>{
+				pwds.forEach(initList)
+				paths.forEach(i=>{
+					delete fileList[i]
+				})
+			})
+		})
+		r()
+	})
+	loadingArr.push(DBInit,initConfg,initFileFunction)//初始化db,初始化配置
 	const loading=Promise.all(loadingArr).then((r)=>{
 		return (r.join("\n"))
 	}).catch((err)=>{
@@ -65,3 +128,31 @@ export async function init(){
 export function getConfig(){
 	return system_config
 }
+
+//复制粘贴剪切删除操作
+
+export function copy(selectArr){
+	bus.emit("copy",selectArr)
+}
+export function shear(selectArr){
+	bus.emit("shear",selectArr)
+}
+export function paste(path){
+	// selectAppListEmpty()
+	bus.emit("paste",path)
+}
+export function deleteFile(selectArr){
+	bus.emit("delete",selectArr)
+}
+
+
+export function initList(path){
+	return readFileAll(path).then(res=>{
+		console.log(`path,res:`,path,res);
+		fileList[path]=res
+		console.log(`fileList:`,fileList);
+
+		// openApp(systemAppList[0])
+	})
+}
+//复制粘贴剪切删除操作end

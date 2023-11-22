@@ -7,6 +7,9 @@ export const activeAppPid=ref(null)
 
 export const fileList=reactive({})
 export const data=[]
+
+export const selectList=ref([])
+export const isShear=ref(false)
 // try{
 // 	bus.on("get:app",()=>{
 // 		bus.emit("update:app",data)

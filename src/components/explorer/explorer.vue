@@ -4,8 +4,10 @@ import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
 import {bus,systemDirectory} from "@/App"
 import {readFileAll,readFile} from "@/utils/file"
 import Win from "../window/window.vue";
-import {fileList} from "@/hooks"
+import {fileList,selectList} from "@/hooks"
 import {Message} from "zijid-ui"
+import {initList} from "@/system"
+import * as system from "@/system"
 const props=defineProps({
 	path:{
 		type:String,
@@ -24,11 +26,12 @@ const tempPath=ref("")
 const history=[]
 const isLoad=ref(false)
 const index=ref(0)
-
+// const selectList=ref([])
 const focusFile=ref(null)
 const dir=computed(()=>{
 	return fileList[tempPath.value]
 })
+
 fileList[tempPath.value]=systemDirectory
 if(!systemDirectory){
 	isLoad.value=true
@@ -143,6 +146,52 @@ function noSelect(){
 let editFileName=""
 const menuDatas=ref([])
 const editFile=ref(null)
+const menuData=[
+	{
+		title:"新建文本",
+		icon:`<?xml version="1.0" encoding="UTF-8"?><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M40 23V14L31 4H10C8.89543 4 8 4.89543 8 6V42C8 43.1046 8.89543 44 10 44H22" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M33 29V43" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M26 36H33H40" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 4V14H40" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+		hander:()=>{
+			createProgress(exec["notepad"].title,exec["notepad"].app,"C:/用户/桌面","")
+		}
+	},
+	{
+		title:"TEST文件夹",
+		children:[
+			{
+				title:"文件夹111",
+				children:[
+					{
+						title:"打开",
+						hander:()=>{
+							alert("打开")
+						}
+					}
+				]
+			}
+		]
+	},
+	{
+		title:"新建文件夹",
+		icon:`<?xml version="1.0" encoding="UTF-8"?><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 8C5 6.89543 5.89543 6 7 6H19L24 12H41C42.1046 12 43 12.8954 43 14V40C43 41.1046 42.1046 42 41 42H7C5.89543 42 5 41.1046 5 40V8Z" fill="none" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M43 22H5" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M5 16V28" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M43 16V28" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+		hander:()=>{
+			// const app=addApp("explorer","文件管理器","","","")
+			/**
+			 创建文件夹
+			 需要
+			 当前位置
+			 文件夹名称
+			 */
+			const pwd="/C/Desktop"
+			const name="新建文件夹"
+			let dir=new WebDir(pwd,name)
+			dir.setIcon(dir_str)
+			fileList[config.desktop.path].push(dir)
+			editFile.value=dir
+			editFileName=dir.name
+			initAppList()
+		}
+	}
+]
 async function showMenu(e,i){
 	const isName=await editNameBlue()
 	if(!isName) return
@@ -153,23 +202,24 @@ async function showMenu(e,i){
 	}
 	menuDatas.value.splice(0,menuDatas.value.length)
 	
-	if(i.type==="WebDir"||i.type==="WebFile"){
-		menuDatas.value.push({
-			title:"打开",
-			hander:()=>{
-				openApp(i)
-			}
-		})
-		menuDatas.value.push({
-			title:"重命名",
-			hander:()=>{
-				console.log(`i:`,i);
-				let dir=i
-				editFile.value=dir
-				editFileName=dir.name
-			}
-		})
-		if(i.pwd!=="/system-app"){
+	// if(i.type==="WebDir"||i.type==="WebFile"){
+		console.log(`i:`,i);
+		if(i.pwd&&i.pwd!=="/system-app"&&i.pwd!=="/"){
+			menuDatas.value.push({
+				title:"打开",
+				hander:()=>{
+					openApp(i)
+				}
+			})
+			menuDatas.value.push({
+				title:"重命名",
+				hander:()=>{
+					console.log(`i:`,i);
+					let dir=i
+					editFile.value=dir
+					editFileName=dir.name
+				}
+			})
 			menuDatas.value.push({
 				title:"复制",
 				hander:()=>{
@@ -194,17 +244,18 @@ async function showMenu(e,i){
 				}
 			})
 		}
-	}else{
+	// }else{
 		menuDatas.value.push(...menuData)
+		console.log(`selectList.value:`,selectList.value);
 		if(selectList.value.length){
 			menuDatas.value.push({
-				title:"粘贴",
+				title:"粘贴1",
 				hander:()=>{
-					paste("/C/Desktop/文件夹"||i.path)
+					paste()
 				}
 			})
 		}
-	}
+	// }
 	
 	bus.emit("menu-show",{
 		x:e.clientX,
@@ -239,7 +290,6 @@ async function editNameBlue(){
 	bus.emit("menu-close")
 	// bus.emit("select-path",config.desktop.path)
 	if(editFile.value===null)return true
-	console.log(`editFile.value.pwd+"/"+editFileName:`,editFile.value.pwd+"/"+editFileName);
 	let isFileExist=await readFile(editFile.value.pwd+editFileName)
 	if(isFileExist&&editFile.value.uid===isFileExist.uid){
 		isFileExist=undefined
@@ -257,8 +307,6 @@ async function editNameBlue(){
 	}
 	// editFile.value.rename(editFileName)
 	readFile(editFile.value.path).then(res=>{
-		console.log(`res:`,res);
-		console.log(`editFile.value:`,editFile.value);
 		if(res&&res.uid===editFile.value.uid){
 			editFile.value.rename(editFileName)
 		}else{
@@ -273,15 +321,13 @@ async function editNameBlue(){
 	
 	return true
 }
-function initList(path){
-	readFileAll(path).then(res=>{
-		fileList[path]=res
-		// initAppList()
-		// openApp(systemAppList[0])
-	})
-}
-
-
+// function initList(path){
+// 	readFileAll(path).then(res=>{
+// 		fileList[path]=res
+// 		// initAppList()
+// 		// openApp(systemAppList[0])
+// 	})
+// }
 
 async function keydown(e){
 	if(e.code==="F2"){
@@ -307,16 +353,32 @@ async function keydown(e){
 		shear()
 	}else if(e.code==="KeyV"&&e.ctrlKey){
 		if(selectList.value.length){
-			paste("/C/Desktop/文件夹"||i.path)
+			paste()
 		}
 	}else if(e.code==="Delete"){
 		deleteFile()
 	}
 }
+
+function copy(){
+	system.copy([...selectAppList.value])
+}
+function shear(){
+	system.shear([...selectAppList.value])
+}
+function paste(){
+	selectAppListEmpty()
+	system.paste(tempPath.value)
+	// if(desktop.value)
+	// 	desktop.value.focus()
+}
+function deleteFile(){
+	system.deleteFile([...selectAppList.value])
+}
 </script>
 
 <template>
-<Win :path="path" @focus="f" v-focus @click="editNameBlue" @keydown.stop="keydown">
+<Win :path="path" @focus.stop="f" v-focus @click="editNameBlue" @keydown.stop="keydown">
 	<template v-slot:title>
 		文件管理器<span class="path" v-text="tempPath"></span>
 	</template>
@@ -348,16 +410,16 @@ async function keydown(e){
 			title="搜索"
 			@keydown.enter="find">
 		</div>
-		<div class="body" @click.stop="noSelect">
+		<div class="body" @click.stop="noSelect"  @contextmenu.prevent.stop="showMenu($event,{alias:'desktop',path:tempPath})">
 
 			<div class="loading d" v-if="isLoad===true">加载中</div>
 			<template v-else>
 				<!-- <zi-dir style="width: 140px;" @open="openDir" :data="dirData1"></zi-dir> -->
 				<template v-for="file in fileList[tempPath]" :key="file.uid+file.name">
 					<div
-					@contextmenu.prevent.stop="showMenu($event,file)"
-					@click.stop="selectApp($event,file)"
-					:class="[file.system?'root_dir':'dir_file',selectAppList.findIndex(i=>i.uid===file.uid)!==-1?'dir_file-hover':'']" v-if="file.type==='WebDir'" @dblclick="open(file)" >
+						@contextmenu.prevent.stop="showMenu($event,file)"
+						@click.stop="selectApp($event,file)"
+						:class="[file.system?'root_dir':'dir_file',selectAppList.findIndex(i=>i.uid===file.uid)!==-1?'dir_file-hover':'']" v-if="file.type==='WebDir'" @dblclick="open(file)" >
 						<div style="font-size: 24px;">
 							<zi-icon name="user" v-if="file.system"></zi-icon>
 							<zi-icon name="folder-close" v-else></zi-icon>

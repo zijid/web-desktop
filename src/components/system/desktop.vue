@@ -4,9 +4,10 @@ import Menu from "@/components/system/menu/menu.vue";
 import {createProgress} from "@/system/progress"
 
 import {showWindow,showDesktop} from "@/system/window";
-import {exec,bus,initApp,selectAppList} from "@/App"
-import {addApp,openAppList,data,windowList,progressList,activeAppPid,fileList} from "@/hooks";
+import {exec,bus,initApp} from "@/App"
+import {addApp,openAppList,data,windowList,progressList,activeAppPid,fileList,selectList} from "@/hooks";
 import {init,getConfig} from "@/system"
+import * as system from "@/system"
 import {dir_str,readFileAll,readFile,WebDir} from "@/utils/file"
 await init()
 initApp()
@@ -19,6 +20,8 @@ const appList=ref([...data])
 // })
 const bg=ref("")
 const systemAppList=[]
+const selectAppList=ref([])//选中的应用
+
 try {
 	readFileAll("/system-app").then(res=>{
 		if(res.length===0){
@@ -37,18 +40,15 @@ try {
 }
 let editFileName=""
 function initAppList(){
-	appList.value=[...systemAppList,...fileList[config.desktop.path]]
+	appList.value=[...systemAppList,...(fileList[config.desktop.path]||[])]
 	appList.value.sort(({createTime:a},{createTime:b})=>a-b)
 }
-function initList(path){
-	readFileAll(path).then(res=>{
-		fileList[path]=res
-		initAppList()
-		// openApp(systemAppList[0])
-	})
-}
+watch(()=>fileList,()=>{
+	console.log(`111:`,fileList);
+	initAppList()
+},{deep:true})
 const selectPath=ref(null)
-const selectList=ref([])//复制剪切粘贴删除时候使用值当前在selectAppList获取
+// const selectList=ref([])//复制剪切粘贴删除时候使用值当前在selectAppList获取
 const isShear=ref(false)
 function selectAppListEmpty(){
 	selectAppList.value.splice(0,selectAppList.value.length)
@@ -70,71 +70,21 @@ async function selectApp(e,file){
 		focusFile.value=selectAppList.value[0]
 	}
 }
-bus.on("copy",()=>{
-	isShear.value=false
-	selectList.value.splice(0,selectList.value.length)
-	selectList.value.push(...selectAppList.value)
-})
-bus.on("shear",()=>{
-	isShear.value=true
-	selectList.value.splice(0,selectList.value.length)
-	selectList.value.push(...selectAppList.value)
-})
-bus.on("paste",()=>{
-	const path=selectPath.value
-	if(!path)return
-	if(selectList.value){
-		const arr=[]
-		let fun
-		if(isShear.value===false){
-			fun=file=>{
-				arr.push(file.copy(path))
-			}
-		}else{
-			fun=file=>{
-				arr.push(file.shear(path))
-			}
-		}
-		const pwds=new Set(selectList.value.filter(i=>i.pwd!="/system-app").map(i=>i.pwd))
-		selectList.value.filter(i=>i.pwd!="/system-app").forEach(fun)
-		Promise.all(arr).then((e)=>{
-			
-			initList(path)
-			pwds.forEach(initList)//更新全部复制的内容
 
-			
-			selectList.value.splice(0,selectList.value.length)
-			if(desktop.value)
-				desktop.value.focus()
-		})
-		// copyFile.value.copy(path).then(()=>{
-		// 	initList()
-		// 	desktop.value.focus()
-		// })
-	}
-})
-setInterval(() => {
-	console.log(`selectAppList.value:`,selectAppList.value);
-}, 1000);
-bus.on("delete",()=>{
-	selectList.value.splice(0,selectList.value.length)
-	selectList.value.push(...selectAppList.value)
-	const pwds=new Set(selectList.value.filter(i=>i.pwd!="/system-app").map(i=>i.pwd))
-	console.log(`selectList.value:`,selectList.value);
-	Promise.all(selectList.value.filter(i=>i.pwd!="/system-app").map(i=>i.delete())).then(res=>{
-		pwds.forEach(initList)
-	})
-})
 const opacity=ref(0)
 onMounted(()=>{
 	bg.value=config.desktop.bg.base64||config.desktop.bg.url
-	initList(config.desktop.path)
+	// initList(config.desktop.path)
+	
+	system.initList(config.desktop.path).then(()=>{
+		initAppList()
+	})
 	// bus.on("update:app",(apps)=>{
 	// 	appList.value=[...apps]
 	// })
 	let t=0
+	selectPath.value=config.desktop.path
 	bus.on("select-path",(path)=>{
-		console.log(`select-path:path:`,path);
 		selectPath.value=path
 		opacity.value=1
 		clearTimeout(t)
@@ -161,25 +111,21 @@ function select(el){
 const vSelect = {
 	mounted: select
 }
-const item=ref({})
 const editFile=ref(null)
-
-let title=ref("")
-const copyFile=ref(null)
-const selectFile=ref(null)
 function copy(){
-	bus.emit("copy")
-	// copyFile.value=file
+	system.copy([...selectAppList.value])
 }
 function shear(){
-	bus.emit("shear")
+	system.shear([...selectAppList.value])
 }
 function paste(path){
 	selectAppListEmpty()
-	bus.emit("paste",path)
+	system.paste(path)
+	if(desktop.value)
+		desktop.value.focus()
 }
 function deleteFile(){
-	bus.emit("delete")
+	system.deleteFile([...selectAppList.value])
 }
 async function showMenu(e,i){
 	const isName=await editNameBlue()
@@ -233,11 +179,12 @@ async function showMenu(e,i){
 		}
 	}else{
 		menuDatas.value.push(...menuData)
+		console.log(`selectList.value:`,selectList.value);
 		if(selectList.value.length){
 			menuDatas.value.push({
 				title:"粘贴",
 				hander:()=>{
-					paste("/C/Desktop/文件夹"||i.path)
+					paste(selectPath.value)
 				}
 			})
 		}
@@ -338,7 +285,9 @@ async function editNameBlue(){
 			editFile.value.name=editFileName
 			editFile.value.save()
 		}
-		initList(editFile.value.pwd)
+		system.initList(editFile.value.pwd).then(()=>{
+			initAppList()
+		})
 		editFile.value=null
 		// fileList[config.desktop.path].sort(({createTime:a},{createTime:b})=>a-b)
 		editFileName=""
@@ -389,23 +338,25 @@ document.addEventListener("keydown",async (e)=>{
 		shear()
 	}else if(e.code==="KeyV"&&e.ctrlKey){
 		if(selectList.value.length){
-			paste("/C/Desktop/文件夹"||i.path)
+			console.log(`selectPath.value:`,selectPath.value);
+			paste(selectPath.value)
 		}
 	}else if(e.code==="Delete"){
 		deleteFile()
 	}
 })
 function f(){
+	console.log(`111:`,111);
 	bus.emit("select-path",config.desktop.path)
 }
 
 </script>
 <template>
 	<div :style="{opacity:opacity}" style="transition: opacity 0.3s;position: fixed;right: 1em;text-shadow: 1px 1px 1px #fff;color: #000;font-size: 12px;">当前焦点目录:{{ selectPath }}</div>
-	<div @focus="f" ref="desktop" tabindex="1" class="desktop" :style="{backgroundImage:`url(${bg})`}" @click.stop="selectAppListEmpty" @click="editNameBlue" @contextmenu.prevent="showMenu($event,{alias:'desktop',path:config.desktop.path})" >
+	<div @focus="f" ref="desktop" tabindex="1" class="desktop" :style="{backgroundImage:`url(${bg})`}" @click.stop="selectAppListEmpty" @click="editNameBlue" @contextmenu.prevent="showMenu($event,{alias:'desktop',path:config.desktop.path})">
 		<Menu></Menu>
 		<!-- @focus="focusApp(item)" -->
-		<div class="app" :class="{appFocus:selectAppList.findIndex(i=>i.uid===item.uid)!==-1||(editFile&&editFile.uid===item.uid)}" v-for="(item,index) in appList" :key="item.path" :tabindex="index+1" @contextmenu.prevent.stop="showMenu($event,item)">
+		<div @focus="f" :tabindex="index+10" class="app" :class="{appFocus:selectAppList.findIndex(i=>i.uid===item.uid)!==-1||(editFile&&editFile.uid===item.uid)}" v-for="(item,index) in appList" :key="item.path" @contextmenu.prevent.stop="showMenu($event,item)">
 			<!-- <div class="box" @dblclick="createProgress(item.title,item.exec,item.pwd,item.targetPath,item.args)">
 				<div class="icon" v-html="item.icon"></div>
 				<div class="name" v-if="!item.edit">

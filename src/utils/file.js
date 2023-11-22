@@ -54,27 +54,33 @@ function nameRepetitive(file,index=0){
 		readFile(file.path).then(res=>{
 			if(!res){
 				if(index){
-					let name=file.name
+					let [name,suffix=""]=file.name.split(".")
+					if(suffix){
+						suffix="."+suffix
+					}
 					const names=name.split('-')
 					if(names.length>1){
 						names[names.length-1] = index
 					}else{
 						names.push(index)
 					}
-					file.name=names.join("-")
+					file.name=names.join("-")+suffix
 				}
 				file.save()
 				r()
 			}else{
 				if(++index){
-					let name=file.name
+					let [name,suffix=""]=file.name.split(".")
+					if(suffix){
+						suffix="."+suffix
+					}
 					const names=name.split('-')
 					if(names.length>1){
 						names[names.length-1] = index
 					}else{
 						names.push(index)
 					}
-					file.name=names.join("-")
+					file.name=names.join("-")+suffix
 				}
 				nameRepetitive(file,index).then(r)
 			}
@@ -114,23 +120,48 @@ class FilesystemObject{
 		const dir=await _readAll(this.path)
 		return dir
 	}
-	copy(path){
+	async copy(path){
 		const newFile=dbToFile(this,true)
 		newFile.pwd=path
 		// newFile.newFile()
 		newFile.uid=utils.uid()
 		newFile.createTime=Date.now()
-		if(this.type==="WebFile"){
-			return nameRepetitive(newFile)
-		}else{
-			return readFileAll(this.path).then(res=>{
-				const arr=[newFile.save()]
-				arr.push(...res.map(file=>{
-					return file.copy(newFile.path)
-				}))
-				return Promise.all(arr)
+		function getNewName(path,name){
+			console.log(path,name)
+			return readFile(pathJoin(path,name)).then(res=>{
+				console.log(`res:`,res);
+				if(res){
+					const newName=window.prompt("名称重复请重新输入",name);
+					console.log(`newName:`,newName);
+					if(newName===null){
+						return null
+					}else{
+						return getNewName(path,newName)
+					}
+				}else{
+					return Promise.resolve(name)
+				}
 			})
 		}
+		const newName=await getNewName(path,this.name)
+		if(newName!=null){
+			newFile.name=newName
+			console.log(`newFile:`,newFile);
+			if(this.type==="WebFile"){
+				return newFile.save()
+			}else{
+				return readFileAll(this.path).then(res=>{
+					const arr=[newFile.save()]
+					arr.push(...res.map(file=>{
+						return file.copy(newFile.path)
+					}))
+					return Promise.all(arr)
+				})
+			}
+		}else{
+			return Promise.resolve()
+		}
+		
 	}
 	shear(path){
 		// const newFile=dbToFile(this,true)
@@ -158,9 +189,6 @@ class FilesystemObject{
 				return this.save()
 			}
 			return readFileAll(oldPath).then(res=>{
-				console.log(`res:`,res);
-				console.log(`oldPath:`,oldPath);
-				console.log(`this.path:`,this.path);
 				const arr=[this.save()]
 				arr.push(...res.map(file=>{
 					return file.shear(this.path)
