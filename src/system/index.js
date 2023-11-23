@@ -98,16 +98,19 @@ export async function init(){
 				})
 			}
 		})
+		const system_file=[
+			"/C/Desktop",
+		]
 		bus.on("delete",(selectArr)=>{
 			selectList.value=selectArr
-			const selectFilter=selectList.value.filter(i=>i.pwd!="/system-app"&&i.pwd!="/")
+			const selectFilter=selectList.value.filter(i=>i.pwd!="/system-app"&&i.pwd!="/"&&!system_file.includes(i.path))
 			const pwds=new Set(selectFilter.map(i=>{
 				return i.pwd
 			}))
 			const paths=new Set(selectFilter.map(i=>{
 				return i.path
 			}))
-			Promise.all(selectList.value.map(i=>i.delete())).then(()=>{
+			Promise.all(selectFilter.map(i=>i.delete())).then(()=>{
 				pwds.forEach(initList)
 				paths.forEach(i=>{
 					delete fileList[i]

@@ -8,7 +8,7 @@ import {exec,bus,initApp} from "@/App"
 import {addApp,openAppList,data,windowList,progressList,activeAppPid,fileList,selectList} from "@/hooks";
 import {init,getConfig} from "@/system"
 import * as system from "@/system"
-import {dir_str,readFileAll,readFile,WebDir} from "@/utils/file"
+import {dir_str,my_computer,readFileAll,readFile,WebDir} from "@/utils/file"
 await init()
 initApp()
 const config=getConfig()
@@ -118,9 +118,9 @@ function copy(){
 function shear(){
 	system.shear([...selectAppList.value])
 }
-function paste(path){
+function paste(){
 	selectAppListEmpty()
-	system.paste(path)
+	system.paste(selectPath.value)
 	if(desktop.value)
 		desktop.value.focus()
 }
@@ -184,7 +184,7 @@ async function showMenu(e,i){
 			menuDatas.value.push({
 				title:"粘贴",
 				hander:()=>{
-					paste(selectPath.value)
+					paste()
 				}
 			})
 		}
@@ -314,6 +314,13 @@ async function focusApp(item){
 	if(!isName) return
 	focusFile.value=item
 }
+async function inputKeyDown(e){
+	if(e.code==="Enter"&&!e.shiftKey){
+		e.preventDefault()
+		const isName=await editNameBlue()
+		if(!isName) return
+	}
+}
 document.addEventListener("keydown",async (e)=>{
 	if(e.code==="F2"){
 		e.preventDefault()
@@ -328,18 +335,13 @@ document.addEventListener("keydown",async (e)=>{
 		const isName=await editNameBlue()
 		if(!isName) return
 		editFile.value=null
-	}else if(e.code==="Enter"&&!e.shiftKey){
-		e.preventDefault()
-		const isName=await editNameBlue()
-		if(!isName) return
 	}else if(e.code==="KeyC"&&e.ctrlKey){
 		copy()
 	}else if(e.code==="KeyX"&&e.ctrlKey){
 		shear()
 	}else if(e.code==="KeyV"&&e.ctrlKey){
 		if(selectList.value.length){
-			console.log(`selectPath.value:`,selectPath.value);
-			paste(selectPath.value)
+			paste()
 		}
 	}else if(e.code==="Delete"){
 		deleteFile()
@@ -378,6 +380,7 @@ function f(){
 					<!-- <img width="24" height="24" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNSA4QzUgNi44OTU0MyA1Ljg5NTQzIDYgNyA2SDE5TDI0IDEySDQxQzQyLjEwNDYgMTIgNDMgMTIuODk1NCA0MyAxNFY0MEM0MyA0MS4xMDQ2IDQyLjEwNDYgNDIgNDEgNDJIN0M1Ljg5NTQzIDQyIDUgNDEuMTA0NiA1IDQwVjhaIiBmaWxsPSJub25lIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik00MyAyMkg1IiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik01IDE2VjI4IiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTQzIDE2VjI4IiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+" alt=""> -->
 				<div ref="editNameRef" v-if="editFile&&editFile.uid===item.uid" class="name editName" v-focus v-text="item.name"
 					@input="editNameInput"
+					@keydown.stop="inputKeyDown"
 					@click.stop
 					@dblclick.stop
 					contenteditable=""

@@ -1,6 +1,13 @@
 import {stringToBlobUrl} from "@/utils"
 import {IndexedDB,utils} from "zijid-ui"
 import {db} from "@/system"
+
+export const dir_str = `<?xml version="1.0" encoding="UTF-8"?><svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 8C5 6.89543 5.89543 6 7 6H19L24 12H41C42.1046 12 43 12.8954 43 14V40C43 41.1046 42.1046 42 41 42H7C5.89543 42 5 41.1046 5 40V8Z" fill="#ffc25b" stroke="#9013fe" stroke-width="4" stroke-linejoin="round"/><path d="M43 22H5" stroke="#ffffff" stroke-width="4" stroke-linejoin="round"/><path d="M5 16V28" stroke="#9013fe" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M43 16V28" stroke="#9013fe" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+export const file_str =`<?xml version="1.0" encoding="UTF-8"?><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M40 23V14L31 4H10C8.89543 4 8 4.89543 8 6V42C8 43.1046 8.89543 44 10 44H22" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M33 29V43" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M26 36H33H40" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 4V14H40" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+export const txt_str =`<?xml version="1.0" encoding="UTF-8"?><svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 6C8 4.89543 8.89543 4 10 4H30L40 14V42C40 43.1046 39.1046 44 38 44H10C8.89543 44 8 43.1046 8 42V6Z" fill="#ffffff" stroke="#000000" stroke-width="4" stroke-linejoin="round"/><path d="M16 20H32" stroke="#707070" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 28H32" stroke="#707070" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+export const no_str =`<?xml version="1.0" encoding="UTF-8"?><svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 44H38C39.1046 44 40 43.1046 40 42V14H30V4H10C8.89543 4 8 4.89543 8 6V42C8 43.1046 8.89543 44 10 44Z" fill="#ffffff" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 4L40 14" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 22L30 34" stroke="#707070" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 22L18 34" stroke="#707070" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+export const my_computer="<?xml version=\"1.0\" encoding=\"UTF-8\"?><svg width=\"24\" height=\"24\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M12 33H4V7H44V33H36H12Z\" fill=\"#2F88FF\" stroke=\"#333\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M16 22V26\" stroke=\"#50e3c2\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M24 33V39\" stroke=\"#333\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M24 18V26\" stroke=\"#50e3c2\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M32 14V26\" stroke=\"#50e3c2\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M12 41H36\" stroke=\"#333\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>"
+
 const config=(await (await fetch("config/index.json")).json())
 // const db = new IndexedDB("web-desktop")
 const tableName="web-desktop-table"
@@ -37,7 +44,6 @@ export function dbToFile(params,newFile=false){
 		file.init(params)
 		// file.uid=utils.uid()
 		// file.createTime=Date.now()
-		// file.setIcon(params.icon)
 		file.write(params.content)
 		return file
 	}else{
@@ -110,6 +116,8 @@ class FilesystemObject{
 		if(!this.content===undefined){
 			await this.read()
 		}
+		const thia=this
+		delete thia.icon
 		return await _writeFile(this.path,this)
 	}
 	async _read(){
@@ -127,12 +135,9 @@ class FilesystemObject{
 		newFile.uid=utils.uid()
 		newFile.createTime=Date.now()
 		function getNewName(path,name){
-			console.log(path,name)
 			return readFile(pathJoin(path,name)).then(res=>{
-				console.log(`res:`,res);
 				if(res){
 					const newName=window.prompt("名称重复请重新输入",name);
-					console.log(`newName:`,newName);
 					if(newName===null){
 						return null
 					}else{
@@ -146,7 +151,6 @@ class FilesystemObject{
 		const newName=await getNewName(path,this.name)
 		if(newName!=null){
 			newFile.name=newName
-			console.log(`newFile:`,newFile);
 			if(this.type==="WebFile"){
 				return newFile.save()
 			}else{
@@ -195,11 +199,6 @@ class FilesystemObject{
 				}))
 				return Promise.all(arr)
 			})
-
-			// return this.save().then(e=>{
-			// 	console.log(`e:`,e);
-			// 	return e
-			// })
 		})
 	}
 	move(toPwd){
@@ -209,20 +208,26 @@ class FilesystemObject{
 		// this.save()
 	}
 	rename(name){
-		const path=this.path
-		_removeFile(path)
-		this.name=name
-		if(this.type==="WebFile"){
-			return _writeFile(this.path,this)
+		if(this.nickname){
+			this.nickname=name
+			return this.save()
 		}else{
-			const arr=[_writeFile(this.path,this)]
-			return readFileAll(path).then(res=>{
-				arr.push(...res.map(file=>{
-					return file.shear(this.path)
-				}))
-				return Promise.all(arr)
-			})
+			const path=this.path
+			_removeFile(path)
+			this.name=name
+			if(this.type==="WebFile"){
+				return _writeFile(this.path,this)
+			}else{
+				const arr=[_writeFile(this.path,this)]
+				return readFileAll(path).then(res=>{
+					arr.push(...res.map(file=>{
+						return file.shear(this.path)
+					}))
+					return Promise.all(arr)
+				})
+			}
 		}
+		
 	}
 	delete(){
 		if(this.type==="WebFile"){
@@ -307,8 +312,22 @@ class WebFile extends FilesystemObject{
 			extension=names.slice(names.length-1)
 			this.extension="."+extension
 		}
+
 		this._name=value
-		this.path=pathJoin(this._pwd,value)
+		this.path=pathJoin(this._pwd,value)		
+		switch(this.extension){
+			case ".txt":
+				this.setIcon(txt_str)
+				break;
+			case ".png":
+			case ".jpg":
+			case ".jpeg":
+			case ".gif":
+				this.setIcon(file_str)
+				break;
+			default:
+				this.setIcon(no_str)
+		}
 	}
 	get pwd(){
 		return this._pwd
@@ -360,6 +379,13 @@ class WebDir extends FilesystemObject{
 	set name(value){
 		this._name=value
 		this.path=pathJoin(this._pwd,value)
+		switch(this.pwd){
+			case "/system-app":
+				this.setIcon(my_computer)
+				break;
+			default:
+				this.setIcon(dir_str)
+		}
 	}
 	get name(){
 		return this._name
@@ -380,11 +406,6 @@ export {
 	WebFile,
 	WebDir
 }
-
-export const dir_str = `<?xml version="1.0" encoding="UTF-8"?><svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 8C5 6.89543 5.89543 6 7 6H19L24 12H41C42.1046 12 43 12.8954 43 14V40C43 41.1046 42.1046 42 41 42H7C5.89543 42 5 41.1046 5 40V8Z" fill="#ffc25b" stroke="#9013fe" stroke-width="4" stroke-linejoin="round"/><path d="M43 22H5" stroke="#ffffff" stroke-width="4" stroke-linejoin="round"/><path d="M5 16V28" stroke="#9013fe" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M43 16V28" stroke="#9013fe" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-export const file_str =`<?xml version="1.0" encoding="UTF-8"?><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M40 23V14L31 4H10C8.89543 4 8 4.89543 8 6V42C8 43.1046 8.89543 44 10 44H22" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M33 29V43" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M26 36H33H40" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 4V14H40" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`
-export const txt_str =`<?xml version="1.0" encoding="UTF-8"?><svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 6C8 4.89543 8.89543 4 10 4H30L40 14V42C40 43.1046 39.1046 44 38 44H10C8.89543 44 8 43.1046 8 42V6Z" fill="#ffffff" stroke="#000000" stroke-width="4" stroke-linejoin="round"/><path d="M16 20H32" stroke="#707070" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 28H32" stroke="#707070" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`
-export const no_str =`<?xml version="1.0" encoding="UTF-8"?><svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 44H38C39.1046 44 40 43.1046 40 42V14H30V4H10C8.89543 4 8 4.89543 8 6V42C8 43.1046 8.89543 44 10 44Z" fill="#ffffff" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 4L40 14" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 22L30 34" stroke="#707070" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 22L18 34" stroke="#707070" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`
 async function testFile(){
 	const initDir=[
 		{

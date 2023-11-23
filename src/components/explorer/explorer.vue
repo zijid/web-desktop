@@ -308,7 +308,10 @@ async function editNameBlue(){
 	// editFile.value.rename(editFileName)
 	readFile(editFile.value.path).then(res=>{
 		if(res&&res.uid===editFile.value.uid){
-			editFile.value.rename(editFileName)
+			const pwd=editFile.value.pwd
+			editFile.value.rename(editFileName).then(res=>{
+				initList(pwd)
+			})
 		}else{
 			editFile.value.name=editFileName
 			editFile.value.save()
@@ -337,7 +340,7 @@ async function keydown(e){
 		if(!isName) return
 		if(focusFile.value){
 			editFile.value=focusFile.value
-			editFileName=editFile.value.name
+			editFileName=editFile.value.nickname||editFile.value.name
 		}
 	}else if(e.code==="Tab"){
 		const isName=await editNameBlue()
@@ -431,7 +434,7 @@ function deleteFile(){
 								<div ref="editNameRef"
 								v-if="editFile&&editFile.uid===file.uid"
 								class="name editName"
-								v-focus v-text="file.name"
+								v-focus v-text="file.nickname||file.name"
 									@input="editNameInput"
 									@click.stop
 									@dblclick.stop
@@ -446,7 +449,7 @@ function deleteFile(){
 								<div ref="editNameRef"
 								v-if="editFile&&editFile.uid===file.uid"
 								class="name editName"
-								v-focus v-text="file.name"
+								v-focus v-text="file.nickname||file.name"
 									@input="editNameInput"
 									@click.stop
 									@dblclick.stop
