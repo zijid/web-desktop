@@ -104,7 +104,6 @@ class FilesystemObject{
 	init(obj){
 		this.uid=obj.uid||this.uid
 		this.createTime=obj.createTime||this.createTime
-		this.icon=obj.icon||this.icon
 	}
 	setIcon(str){
 		this.icon=str
@@ -116,8 +115,9 @@ class FilesystemObject{
 		if(!this.content===undefined){
 			await this.read()
 		}
-		const thia=this
+		const thia={...this}
 		delete thia.icon
+		console.log(`this:`,this);
 		return await _writeFile(this.path,this)
 	}
 	async _read(){
@@ -379,9 +379,12 @@ class WebDir extends FilesystemObject{
 	set name(value){
 		this._name=value
 		this.path=pathJoin(this._pwd,value)
+		console.log(`this.pwd:`,this.pwd);
 		switch(this.pwd){
 			case "/system-app":
+				console.log(`my_computer:`,my_computer);
 				this.setIcon(my_computer)
+				console.log(`this:`,this);
 				break;
 			default:
 				this.setIcon(dir_str)

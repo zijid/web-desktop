@@ -29,6 +29,7 @@ try {
 				const systemDir=new WebDir(i.pwd,i.name)
 				systemDir.init(i)
 				systemAppList.push(systemDir)
+				console.log(`systemDir:`,systemDir);
 				systemDir.save()
 			})
 		}else{
