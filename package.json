@@ -8,8 +8,8 @@
 		"build": "vite build",
 		"link-ui":"npm link zijid-ui",
 		"preview": "vite preview",
-		"github": "git add .&git commit -m 'fix:修复了一些问题，暂时没发现问题了'&git push https://github.com/zijid/web-desktop.git",
-		"gitee": "git add .&git commit -m 'fix:修复了一些问题，暂时没发现问题了'&git push https://gitee.com/zijid/web-desktop"
+		"github": "git add . && git commit -m 'fix:修复了一些问题，暂时没发现问题了' && git push https://github.com/zijid/web-desktop.git master", 
+		"gitee": "git add .&&git commit -m 'fix:修复了一些问题，暂时没发现问题了'&&git push https://gitee.com/zijid/web-desktop"
 	},
 	"dependencies": {
 		"vue": "^3.3.4"
