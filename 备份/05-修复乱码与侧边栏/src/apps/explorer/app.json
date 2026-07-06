@@ -1,0 +1,9 @@
+{
+  "name": "文件管理器",
+  "icon": "explorer.svg",
+  "extensions": [""],
+  "windowWidth": 70,
+  "windowHeight": 80,
+  "minWidth": 400,
+  "minHeight": 300
+}

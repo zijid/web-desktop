@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>简约时钟</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    color: #fff;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    overflow: hidden;
+  }
+  .time { font-size: clamp(2.5rem, 10vw, 5rem); font-weight: 300; letter-spacing: 4px; text-shadow: 0 0 30px rgba(100,100,255,0.3); }
+  .date { font-size: clamp(0.9rem, 3vw, 1.2rem); opacity: 0.7; margin-top: 12px; letter-spacing: 2px; }
+  .seconds { font-size: 0.5em; opacity: 0.5; vertical-align: super; margin-left: 4px; }
+  .tip { position: fixed; bottom: 10px; font-size: 11px; opacity: 0.3; }
+</style>
+</head>
+<body>
+<div class="time" id="time">00:00<span class="seconds">00</span></div>
+<div class="date" id="date">----年--月--日 星期-</div>
+<div class="tip">HTML 应用 | 双击标题栏拖动</div>
+<script>
+var WEEK = ['日', '一', '二', '三', '四', '五', '六'];
+function pad(n) { return String(n).padStart(2, '0'); }
+function update() {
+  var now = new Date();
+  var h = pad(now.getHours());
+  var m = pad(now.getMinutes());
+  var s = pad(now.getSeconds());
+  document.getElementById('time').innerHTML = h + ':' + m + '<span class="seconds">' + s + '</span>';
+  document.getElementById('date').textContent = now.getFullYear() + '年' + pad(now.getMonth()+1) + '月' + pad(now.getDate()) + '日 星期' + WEEK[now.getDay()];
+}
+update();
+setInterval(update, 1000);
+document.addEventListener("mousedown", function(){ window.parent.postMessage({ type: "app-focus" }, "*"); });
+</script>
+</body>
+</html>

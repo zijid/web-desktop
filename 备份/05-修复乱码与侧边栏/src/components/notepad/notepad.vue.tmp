@@ -1,0 +1,606 @@
+﻿<script setup>
+/**
+ * 璁颁簨鏈?鈥?浠?Win10 鐙珛绐楀彛
+ * 鑷甫鏍囬鏍忋€佽彍鍗曟爮銆佺紪杈戝尯銆佺姸鎬佹爮
+ * 浣跨敤铏氭嫙鏂囦欢绯荤粺 readFile() 鍔犺浇锛寃rite()/save() 淇濆瓨
+ */
+import { ref, computed, onMounted, onUnmounted, nextTick, reactive } from 'vue'
+import { readFile } from '@/utils/file'
+import { windowList } from '@/hooks'
+import { closeWindow as sysCloseWindow, createWindow, showWindow, hideWindow } from '@/system/window'
+
+const props = defineProps({
+  title:    { type: String, default: '' },
+  pid:      { type: Number, default: 0 },
+  pwd:      { type: String, default: '' },
+  filePath: { type: String, default: '' },
+  args:     { type: String, default: '' },
+  path:     { type: String, default: '' },
+  targetPath: { type: String, default: '' }
+})
+
+// 鈹€鈹€ 绐楀彛鐘舵€?鈹€鈹€
+const winEl = ref(null)
+const winInfo = ref(null)
+const isMaximized = ref(false)
+const restoreRect = reactive({ x: 0, y: 0, w: 55, h: 60 })
+const position = reactive({ x: 0, y: 0 })
+const windowSize = reactive({ w: 55, h: 60 })
+
+// 鈹€鈹€ 缂栬緫鍣ㄧ姸鎬?鈹€鈹€
+const content = ref('')
+const fileUrl = ref('')
+const lineCount = ref(1)
+const statusText = ref('灏辩华')
+const isLoading = ref(false)
+const isModified = ref(false)
+const fileObject = ref(null)
+const currentPath = ref('')
+const wrapMode = ref(false)
+const showStatusBar = ref(true)
+const showLineNumbers = ref(true)
+const encoding = ref('UTF-8')
+const cursorPos = ref({ line: 1, col: 1 })
+const fontSize = ref(12)
+const isFocused = ref(false)
+
+const textareaRef = ref(null)
+const headerRef = ref(null)
+
+// 鈹€鈹€ 绐楀彛鍒濆鍖?鈹€鈹€
+function initWindow() {
+  winInfo.value = createWindow(props.pid)
+  if (!winInfo.value) return
+
+  const w = window.innerWidth
+  const h = window.innerHeight
+  position.x = Math.max(0, w * 0.5 - w * 0.275)
+  position.y = Math.max(0, h * 0.5 - h * 0.3)
+  windowSize.w = 55
+  windowSize.h = 60
+  restoreRect.x = position.x
+  restoreRect.y = position.y
+  restoreRect.w = 55
+  restoreRect.h = 60
+}
+
+function focusWin() {
+  if (winInfo.value) {
+    showWindow(winInfo.value.pid, 'window')
+    isFocused.value = true
+  }
+}
+
+function minimize() {
+  if (winInfo.value) hideWindow(winInfo.value.pid)
+}
+
+function maximize() {
+  isMaximized.value = !isMaximized.value
+  if (isMaximized.value) {
+    restoreRect.x = position.x
+    restoreRect.y = position.y
+    restoreRect.w = windowSize.w
+    restoreRect.h = windowSize.h
+    position.x = 0
+    position.y = 0
+    windowSize.w = 100
+    windowSize.h = 100
+  } else {
+    position.x = restoreRect.x
+    position.y = restoreRect.y
+    windowSize.w = restoreRect.w
+    windowSize.h = restoreRect.h
+  }
+}
+
+@@@CLOSEWIN@@@
+  if (props.pid) sysCloseWindow(props.pid)
+}
+
+// 鈹€鈹€ 绐楀彛鎷栨嫿 鈹€鈹€
+let isDragging = false
+let dragOffset = { x: 0, y: 0 }
+
+function onHeaderMouseDown(e) {
+  if (isMaximized.value) return
+  if (e.target.closest('.win-handle')) return
+  isDragging = true
+  dragOffset.x = e.clientX - position.x
+  dragOffset.y = e.clientY - position.y
+  document.addEventListener('mousemove', onDragMove)
+  document.addEventListener('mouseup', onDragEnd)
+}
+
+function onDragMove(e) {
+  if (!isDragging) return
+  position.x = e.clientX - dragOffset.x
+  position.y = e.clientY - dragOffset.y
+}
+
+function onDragEnd() {
+  isDragging = false
+  document.removeEventListener('mousemove', onDragMove)
+  document.removeEventListener('mouseup', onDragEnd)
+}
+
+// 鈹€鈹€ 缂栬緫鍣ㄩ€昏緫 鈹€鈹€
+function updateLineCount() {
+  lineCount.value = (content.value.match(/\n/g) || []).length + 1
+}
+
+function updateCursor() {
+  if (!textareaRef.value) return
+  const ta = textareaRef.value
+  const text = content.value
+  const pos = ta.selectionStart
+  const before = text.substring(0, pos)
+  const line = (before.match(/\n/g) || []).length + 1
+  const lastNewline = before.lastIndexOf('\n')
+  const col = lastNewline >= 0 ? pos - lastNewline : pos + 1
+  cursorPos.value = { line, col }
+}
+
+async function loadFile(path) {
+  if (!path) { statusText.value = '鏃犳枃浠惰矾寰?; return }
+  currentPath.value = path
+  fileUrl.value = path
+  isLoading.value = true
+  statusText.value = '姝ｅ湪鍔犺浇...'
+
+  try {
+    const file = await readFile(path)
+    if (!file) {
+      content.value = ''
+      fileObject.value = null
+      statusText.value = '鏂板缓鏂囦欢'
+    } else {
+      fileObject.value = file
+      const text = file.content !== undefined ? file.content : ''
+      content.value = typeof text === 'string' ? text : String(text)
+      statusText.value = '宸插姞杞?
+      isModified.value = false
+    }
+    updateLineCount()
+  } catch (err) {
+    statusText.value = '鍔犺浇澶辫触'
+    content.value = '// 鏃犳硶鍔犺浇鏂囦欢: ' + err.message
+    updateLineCount()
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function saveFile() {
+  if (!fileObject.value && !currentPath.value) {
+    statusText.value = '鏃犳枃浠跺彲淇濆瓨'
+    return
+  }
+  try {
+    if (fileObject.value) {
+      await fileObject.value.write(content.value)
+      await fileObject.value.save()
+    } else {
+      const existing = await readFile(currentPath.value)
+      if (existing) {
+        await existing.write(content.value)
+        await existing.save()
+        fileObject.value = existing
+      } else {
+        statusText.value = '鏃犳硶淇濆瓨: 鏂囦欢瀵硅薄涓嶅瓨鍦?
+        return
+      }
+    }
+    isModified.value = false
+    statusText.value = '宸蹭繚瀛?
+    setTimeout(() => { statusText.value = '宸插姞杞? }, 2000)
+  } catch (err) {
+    statusText.value = '淇濆瓨澶辫触'
+    console.error('save failed', err)
+  }
+}
+
+function newFile() {
+  content.value = ''
+  fileObject.value = null
+  currentPath.value = ''
+  fileUrl.value = ''
+  isModified.value = false
+  statusText.value = '鏂板缓鏂囦欢'
+  updateLineCount()
+}
+
+function handleInput() {
+  updateLineCount()
+  updateCursor()
+  if (!isModified.value) {
+    isModified.value = true
+    statusText.value = '宸蹭慨鏀?
+  }
+}
+
+function handleKeydown(e) {
+  if (e.key === 'Tab') {
+    e.preventDefault()
+    const ta = e.target
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    const before = content.value.substring(0, start)
+    const after = content.value.substring(end)
+    content.value = before + '  ' + after
+    updateLineCount()
+    isModified.value = true
+    statusText.value = '宸蹭慨鏀?
+    nextTick(() => { ta.selectionStart = ta.selectionEnd = start + 2 })
+  }
+  if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveFile() }
+  if (e.ctrlKey && e.key === 'n') { e.preventDefault(); newFile() }
+  nextTick(updateCursor)
+}
+
+function handleSelect() { updateCursor() }
+
+function handleTextareaScroll() {
+  const ta = textareaRef.value
+  if (!ta) return
+  const ln = ta.parentElement?.querySelector('.np-line-numbers')
+  if (ln) ln.scrollTop = ta.scrollTop
+}
+
+onMounted(() => {
+  initWindow()
+
+  const source = props.filePath || props.args || props.path || props.targetPath
+  console.log('[Notepad] mounted, source:', source)
+
+  if (source) {
+    const dupCount = windowList.filter(w =>
+      w.title && source && w.title.includes(source) && w.pid !== props.pid
+    ).length
+    if (dupCount > 0) {
+      setTimeout(() => { if (props.pid) sysCloseWindow(props.pid) }, 50)
+      return
+    }
+  }
+
+  if (source) loadFile(source)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('mousemove', onDragMove)
+  document.removeEventListener('mouseup', onDragEnd)
+})
+
+function onMenuClick(action) {
+  if (action === 'new') newFile()
+  else if (action === 'save') saveFile()
+  else if (action === 'toggleWrap') wrapMode.value = !wrapMode.value
+  else if (action === 'toggleStatus') showStatusBar.value = !showStatusBar.value
+  else if (action === 'toggleLineNum') showLineNumbers.value = !showLineNumbers.value
+}
+
+const fileSizeStr = computed(() => {
+  const bytes = new Blob([content.value]).size
+  if (bytes === 0) return '0 B'
+  const units = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(1024))
+  return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + units[i]
+})
+
+const statusStr = computed(() => {
+  if (isLoading.value) return '姝ｅ湪鍔犺浇...'
+  if (isModified.value) return '宸蹭慨鏀?
+  return statusText.value
+})
+</script>
+
+<template>
+  <div
+    ref="winEl"
+    class="np-window"
+    :class="{ maximized: isMaximized, focused: isFocused }"
+    :style="{
+      left: position.x + 'px',
+      top: position.y + 'px',
+      width: windowSize.w + '%',
+      height: 'calc(' + windowSize.h + '% - var(--tab-height, 32px))',
+      zIndex: winInfo?.z ?? 1
+    }"
+    @mousedown="focusWin"
+  >
+    <!-- 鏍囬鏍?-->
+    <div
+      ref="headerRef"
+      class="np-titlebar"
+      @mousedown="onHeaderMouseDown"
+      @dblclick="maximize"
+    >
+      <div class="np-title-icon">
+        <svg width="14" height="14" viewBox="0 0 48 48" fill="none">
+          <path d="M18 8H11C10.4477 8 10 8.44772 10 9V43C10 43.5523 10.4477 44 11 44H39C39.5523 44 40 43.5523 40 43V9C40 8.44772 39.5523 8 39 8H32" stroke="currentColor" stroke-width="4" fill="none"/>
+          <path d="M18 13V8H21.9505C21.9778 8 22 7.97784 22 7.9505V6C22 4.34315 23.3431 3 25 3C26.6569 3 28 4.34315 28 6V7.9505C28 7.97784 28.0222 8 28.0495 8H32V13C32 13.5523 31.5523 14 31 14H19C18.4477 14 18 13.5523 18 13Z" stroke="currentColor" stroke-width="4" fill="none"/>
+        </svg>
+      </div>
+      <div class="np-title-text">{{ isModified ? '* ' : "" }}{{ fileUrl ? fileUrl.split('/').pop() : '鏃犳爣棰?- 璁颁簨鏈? }}</div>
+      <div class="np-title-handle win-handle">
+        <div class="np-btn np-btn-min" @click.stop="minimize" title="鏈€灏忓寲">
+          <svg viewBox="0 0 12 12"><rect x="1" y="5.5" width="10" height="1.5" fill="currentColor"/></svg>
+        </div>
+        <div class="np-btn np-btn-max" @click.stop="maximize" :title="isMaximized ? '杩樺師' : '鏈€澶у寲'">
+          <svg v-if="isMaximized" viewBox="0 0 12 12">
+            <rect x="2" y="0.5" width="8" height="7" rx="0.5" stroke="currentColor" stroke-width="1" fill="#fff"/>
+            <rect x="0.5" y="3" width="8" height="7" rx="0.5" stroke="currentColor" stroke-width="1" fill="#fff"/>
+          </svg>
+          <svg v-else viewBox="0 0 12 12">
+            <rect x="1" y="1.5" width="10" height="9" rx="0.5" stroke="currentColor" stroke-width="1" fill="none"/>
+          </svg>
+        </div>
+        <div class="np-btn np-btn-close" @click.stop="closeWin" title="鍏抽棴">
+          <svg viewBox="0 0 12 12">
+            <line x1="2" y1="2" x2="10" y2="10" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="10" y1="2" x2="2" y2="10" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- 鑿滃崟鏍?-->
+    <div class="np-menubar">
+      <div class="np-menu-item" @click="onMenuClick('new')">鏂板缓</div>
+      <div class="np-menu-item" @click="onMenuClick('save')">淇濆瓨</div>
+      <div class="np-menu-sep"></div>
+      <div class="np-menu-item" @click="onMenuClick('toggleWrap')" :class="{ active: wrapMode }">鑷姩鎹㈣</div>
+      <div class="np-menu-sep"></div>
+      <div class="np-menu-item" @click="onMenuClick('toggleStatus')" :class="{ active: showStatusBar }">鐘舵€佹爮</div>
+      <div class="np-menu-item" @click="onMenuClick('toggleLineNum')" :class="{ active: showLineNumbers }">琛屽彿</div>
+    </div>
+
+    <!-- 缂栬緫鍖?-->
+    <div class="np-body">
+      <div class="np-line-numbers" v-if="showLineNumbers" @scroll="handleTextareaScroll">
+        <div v-for="n in lineCount" :key="n" class="np-line-num" :class="{ active: n === cursorPos.line }">{{ n }}</div>
+      </div>
+      <textarea
+        ref="textareaRef"
+        class="np-textarea"
+        v-model="content"
+        @input="handleInput"
+        @keydown="handleKeydown"
+        @click="updateCursor"
+        @select="handleSelect"
+        @scroll="handleTextareaScroll"
+        spellcheck="false"
+        :style="{
+          fontSize: fontSize + 'px',
+          whiteSpace: wrapMode ? 'pre-wrap' : 'pre',
+          wordWrap: wrapMode ? 'break-word' : 'normal',
+          overflowWrap: wrapMode ? 'break-word' : 'normal'
+        }"
+        placeholder="鍦ㄦ杈撳叆鏂囨湰..."
+      ></textarea>
+      <div v-if="isLoading" class="np-loading">
+        <div class="np-spinner"></div>
+        <span>鍔犺浇涓?..</span>
+      </div>
+    </div>
+
+    <!-- 鐘舵€佹爮 -->
+    <div class="np-statusbar" v-if="showStatusBar">
+      <div class="np-st-group">
+        <span class="np-st-item np-st-cursor">绗?{{ cursorPos.line }} 琛岋紝绗?{{ cursorPos.col }} 鍒?/span>
+      </div>
+      <div class="np-st-group">
+        <span class="np-st-item">{{ lineCount }} 琛?/span>
+        <span class="np-st-item">{{ fileSizeStr }}</span>
+        <span class="np-st-item">{{ encoding }}</span>
+        <span class="np-st-item np-st-modified" :class="{ 'is-mod': isModified }">{{ statusStr }}</span>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.np-window {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  color: #000;
+  font-family: 'Consolas', 'Courier New', 'Microsoft YaHei', monospace;
+  outline: 1px solid #999;
+  box-shadow: 1px 1px 12px rgba(0,0,0,0.18);
+  user-select: none;
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+.np-window.focused {
+  outline: 1px solid #666;
+  box-shadow: 2px 2px 18px rgba(0,0,0,0.22);
+}
+.np-window.maximized {
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: calc(100% - var(--tab-height, 32px)) !important;
+  border-radius: 0;
+}
+
+/* 鈹€鈹€ 鏍囬鏍?鈹€鈹€ */
+.np-titlebar {
+  display: flex;
+  align-items: center;
+  height: 30px;
+  background: linear-gradient(180deg, #fff 0%, #ecebe9 100%);
+  border-bottom: 1px solid #d6d4d2;
+  cursor: default;
+  flex-shrink: 0;
+}
+.np-title-icon {
+  width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  flex-shrink: 0;
+}
+.np-title-text {
+  flex: 1;
+  font-size: 12px;
+  color: #333;
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 28px;
+  cursor: move;
+}
+.np-title-handle {
+  display: flex;
+  height: 100%;
+  flex-shrink: 0;
+}
+.np-btn {
+  width: 46px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  color: #333;
+  transition: background 0.08s;
+}
+.np-btn svg {
+  width: 10px;
+  height: 10px;
+}
+.np-btn:hover { background: #e5e5e5; }
+.np-btn:active { background: #ccc; }
+.np-btn-close:hover { background: #e81123; color: #fff; }
+.np-btn-close:active { background: #bf0f1d; color: #fff; }
+
+/* 鈹€鈹€ 鑿滃崟鏍?鈹€鈹€ */
+.np-menubar {
+  display: flex;
+  align-items: center;
+  padding: 2px 4px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #d4d4d4;
+  gap: 2px;
+  min-height: 24px;
+  flex-shrink: 0;
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  font-size: 12px;
+}
+.np-menu-item {
+  padding: 2px 10px;
+  cursor: default;
+  color: #333;
+  border-radius: 2px;
+}
+.np-menu-item:hover { background: #e5e5e5; }
+.np-menu-item.active { color: #0078d4; }
+.np-menu-sep {
+  width: 1px;
+  height: 16px;
+  background: #d4d4d4;
+  margin: 0 4px;
+}
+
+/* 鈹€鈹€ 缂栬緫鍖?鈹€鈹€ */
+.np-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  background: #fff;
+  user-select: text;
+}
+.np-line-numbers {
+  background: #f6f6f6;
+  padding: 4px 0;
+  text-align: right;
+  user-select: none;
+  min-width: 42px;
+  border-right: 1px solid #e0e0e0;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.np-line-num {
+  padding: 0 8px 0 6px;
+  color: #999;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.np-line-num.active {
+  color: #333;
+  font-weight: 600;
+}
+.np-textarea {
+  flex: 1;
+  padding: 4px 10px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #000;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  resize: none;
+  tab-size: 4;
+  overflow: auto;
+}
+.np-textarea::selection { background: #add6ff; }
+.np-textarea::placeholder { color: #bbb; }
+.np-textarea::-webkit-scrollbar { width: 12px; height: 12px; }
+.np-textarea::-webkit-scrollbar-track { background: #f1f1f1; }
+.np-textarea::-webkit-scrollbar-thumb { background: #c1c1c1; border: 2px solid #f1f1f1; border-radius: 7px; }
+.np-textarea::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+
+.np-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #888;
+  background: rgba(255,255,255,0.75);
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 12px;
+}
+.np-spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid #e0e0e0;
+  border-top-color: #0078d4;
+  border-radius: 50%;
+  animation: npspin 0.8s linear infinite;
+}
+@keyframes npspin { to { transform: rotate(360deg); } }
+
+/* 鈹€鈹€ 鐘舵€佹爮 鈹€鈹€ */
+.np-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 10px;
+  background: #f0f0f0;
+  border-top: 1px solid #d4d4d4;
+  color: #555;
+  font-size: 11px;
+  flex-shrink: 0;
+  min-height: 22px;
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+}
+.np-st-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.np-st-item { white-space: nowrap; }
+.np-st-cursor { min-width: 80px; }
+.np-st-modified { transition: color 0.2s; }
+.np-st-modified.is-mod { color: #c00; font-weight: 600; }
+</style>

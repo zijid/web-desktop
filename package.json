@@ -6,13 +6,16 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "vite build",
-		"link-ui":"npm link zijid-ui",
+		"link-ui": "npm link zijid-ui",
 		"preview": "vite preview",
-		"github": "git add . && git commit -m 'fix:修复了一些问题，暂时没发现问题了' && git push https://github.com/zijid/web-desktop.git master", 
+		"github": "git add . && git commit -m 'fix:修复了一些问题，暂时没发现问题了' && git push https://github.com/zijid/web-desktop.git master",
 		"gitee": "git add .&&git commit -m 'fix:修复了一些问题，暂时没发现问题了'&&git push https://gitee.com/zijid/web-desktop"
 	},
 	"dependencies": {
-		"vue": "^3.3.4"
+		"idb": "^8.0.3",
+		"playwright": "^1.61.1",
+		"vue": "^3.3.4",
+		"zijid-ui": "^0.1.0"
 	},
 	"devDependencies": {
 		"@vitejs/plugin-vue": "^4.1.0",
