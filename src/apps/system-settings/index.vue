@@ -77,6 +77,7 @@ function addExtension() {
   app.extensions.push(ext)
   rebuildAssociations()
   saveExtensionsState()
+  bus.emit('extensions-changed')
   const _cApps = getCustomApps()
   if (_cApps[app.id]) {
     _cApps[app.id].extensions = [...app.extensions]
@@ -94,6 +95,7 @@ function removeExtension(ext) {
   app.extensions = app.extensions.filter(e => e !== ext)
   rebuildAssociations()
   saveExtensionsState()
+  bus.emit('extensions-changed')
   const _cApps = getCustomApps()
   if (_cApps[app.id]) {
     _cApps[app.id].extensions = [...app.extensions]

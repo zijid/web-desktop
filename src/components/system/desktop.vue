@@ -270,51 +270,26 @@ function closeStartMenu(e){
 
 function initAppList(){
 
-
 	appList.value=[...(fileList[config.desktop.path]||[])]
-
 
 	// 根据扩展名关联更新文件图标
 
-
 	for (const f of appList.value) {
-
-
-		if (f.type === "WebFile" && f.extension) {
-
-
-			const ext = f.extension.replace(/^\./, "").toLowerCase()
-
-
+		if (f.type === 'WebFile' && f.extension) {
+			const ext = f.extension.replace(/^\./, '').toLowerCase()
 			const appId = getAppForExtension(ext)
-
-
 			if (appId) {
-
-
 				const app = getApp(appId)
-
-
 				if (app && app.icon) {
-
-
+					if (!f._origIcon) f._origIcon = f.icon
 					f.icon = app.icon
-
-
 				}
-
-
+			} else if (f._origIcon) {
+				f.icon = f._origIcon
+				delete f._origIcon
 			}
-
-
 		}
-
-
 	}
-
-
-	// 在桌面添加"此电脑"图标
-
 
 	const thisPcIdx = appList.value.findIndex(i => i.uid === "this-pc")
 
@@ -463,6 +438,7 @@ onMounted(()=>{
 	if (savedPath) config.desktop.path = savedPath
 
 	bus.on('wallpaper-change', (url) => { bg.value = url })
+  bus.on('extensions-changed', () => { rebuildAssociations(); initAppList() })
 
 
 	system.initList(config.desktop.path).then(()=>{

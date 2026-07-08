@@ -1,4 +1,4 @@
-/**
+﻿/**
  * App System — 应用系统
  * 
  * 两种方式添加应用：
@@ -248,9 +248,8 @@ export function launchApp(appId, opts = {}) {
 export function saveExtensionsState() {
   const state = {}
   for (const [id, app] of _registry) {
-    if (app.extensions && app.extensions.length) {
-      state[id] = [...app.extensions]
-    }
+      // 保存所有应用（包括空数组），否则刷新后默认扩展名会恢复
+      state[id] = app.extensions ? [...app.extensions] : []
   }
   try { localStorage.setItem('web-desktop-extensions', JSON.stringify(state)) } catch(e) {}
 }
