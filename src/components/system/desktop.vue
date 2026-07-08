@@ -345,6 +345,9 @@ watch(()=>fileList,()=>{
 const selectPath=ref(null)
 
 
+const desktopDragOver=ref(false)
+
+
 const showSystemInfo=ref(false)
 
 
@@ -438,7 +441,8 @@ onMounted(()=>{
 	if (savedPath) config.desktop.path = savedPath
 
 	bus.on('wallpaper-change', (url) => { bg.value = url })
-  bus.on('extensions-changed', () => { rebuildAssociations(); initAppList() })
+  bus.on('file-list-changed', (path) => { console.log('[Desktop] file-list-changed:', path); system.initList(path).then(() => { initAppList() }) })
+  bus.on('file-list-changed', (path) => { system.initList(path).then(() => { initAppList() }) })
 
 
 	system.initList(config.desktop.path).then(()=>{
@@ -1566,6 +1570,97 @@ document.addEventListener("keydown",async (e)=>{
 })
 
 
+
+
+// ...
+let _desktopDragCount = 0
+
+function onDesktopDragOver(e) {
+  _desktopDragCount++
+  desktopDragOver.value = true
+}
+
+function onDesktopDragLeave(e) {
+  _desktopDragCount--
+  if (_desktopDragCount <= 0) {
+    _desktopDragCount = 0
+    desktopDragOver.value = false
+  }
+}
+
+async function onDesktopDrop(e) {
+  _desktopDragCount = 0
+  desktopDragOver.value = false
+  
+  const files = e.dataTransfer.files
+  if (!files || files.length === 0) return
+  
+  const targetPath = config.desktop.path || '/C/Desktop'
+  
+  let saved = 0
+  let errors = 0
+  const total = files.length
+  
+  for (let i = 0; i < total; i++) {
+    const file = files[i]
+    if (!file) { errors++; continue }
+    try {
+      await handleDesktopFileDrop(file, targetPath)
+      saved++
+    } catch (err) {
+      console.error('[Desktop] Drop file failed:', file.name, err)
+      errors++
+    }
+  }
+  
+  // Refresh
+  await system.initList(config.desktop.path)
+  initAppList()
+  
+  if (saved > 0) {
+    const msg = 'Imported ' + saved + ' file(s)' + (errors > 0 ? ', ' + errors + ' failed' : '')
+    try { const { useToast } = await import('zijid-ui'); const t = useToast(); t.show({ title: 'Import complete', message: msg, type: 'success', duration: 3000 }) } catch(e) {}
+  }
+}
+
+async function handleDesktopFileDrop(file, targetPath) {
+  const name = file.name
+  if (!name) throw new Error('Invalid file name')
+  
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = async function(e) {
+      try {
+        const dataUrl = e.target.result
+        const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : ''
+        
+        // Check same-name file
+        const { readFile, WebFile } = await import('@/utils/file')
+        const destPath = targetPath + '/' + name
+        const exists = await readFile(destPath)
+        let finalName = name
+        if (exists) {
+          const nameParts = name.split('.')
+          const baseName = nameParts.length > 1 ? nameParts.slice(0, -1).join('.') : name
+          const suffix = nameParts.length > 1 ? '.' + nameParts.pop() : ''
+          let counter = 2
+          while (await readFile(targetPath + '/' + baseName + '(' + counter + ')' + suffix)) {
+            counter++
+          }
+          finalName = baseName + '(' + counter + ')' + suffix
+        }
+        
+        const wf = new WebFile(targetPath, finalName)
+        wf.write(dataUrl)
+        await wf.save()
+        resolve()
+      } catch (err) { reject(err) }
+    }
+    reader.onerror = () => reject(new Error('Read file failed'))
+    reader.readAsDataURL(file)
+  })
+}
+
 function f(){
 
 
@@ -1590,7 +1685,7 @@ function f(){
 	<div :style="{opacity:opacity}" style="transition: opacity 0.3s;position: fixed;right: 1em;text-shadow: 1px 1px 1px #fff;color: #000;font-size: 12px;">当前焦点目录:{{ selectPath }}</div>
 
 
-	<div @focus="f" ref="desktop" tabindex="1" class="desktop" :style="{backgroundImage:`url(${bg})`}" @click.stop="selectAppListEmpty" @click="editNameBlue" @contextmenu.prevent="showMenu($event,{alias:'desktop',path:config.desktop.path})">
+	<div @focus="f" ref="desktop" tabindex="1" class="desktop" :class="{ 'drag-over': desktopDragOver }" :style="{backgroundImage:`url(${bg})`}" @click.stop="selectAppListEmpty" @click="editNameBlue" @contextmenu.prevent="showMenu($event,{alias:'desktop',path:config.desktop.path})" @dragover.prevent="onDesktopDragOver" @dragleave.prevent="onDesktopDragLeave" @drop.prevent="onDesktopDrop">
 
 
 		<Menu></Menu>
@@ -1704,7 +1799,7 @@ function f(){
 			<template v-for="(progress,index) in progressList" :key="progress.pid">
 
 
-			<component v-if="progress.exec" :is="progress.exec" v-bind="progress" ref="app" />
+			<component v-if="progress.exec" :is="progress.exec" :path="progress.path" :file-path="progress.path" :pid="progress.pid" ref="app" />
 
 
 			<Window v-else :pid="progress.pid" :title="progress.title" :path="progress.path" :initW="progress.windowWidth ?? 50" :initH="progress.windowHeight ?? 60">
@@ -1713,7 +1808,7 @@ function f(){
 				<template #title>{{ progress.title }}</template>
 
 
-				<AppFrame v-bind="progress" ref="app" @close="sysCloseWindow" @focus="(pid) => showWindow(pid, 'window')" />
+				<AppFrame :app-id="progress.appId" :title="progress.title" :pid="progress.pid" :pwd="progress.pwd" :file-path="progress.filePath || progress.path" :path="progress.path" :args="progress.args" :url="progress.url" ref="app" @close="sysCloseWindow" @focus="(pid) => showWindow(pid, 'window')" />
 
 
 			</Window>
