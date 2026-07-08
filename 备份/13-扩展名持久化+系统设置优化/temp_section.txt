@@ -1,0 +1,50 @@
+﻿async function testFile() {
+  const initDir = [
+    { pwd: "/C", name: "Users", nickname: "用户" },
+    { pwd: "/C", name: "Desktop", nickname: "桌面" },
+    { pwd: "/C/Desktop", name: "文件夹" },
+    { pwd: "/C/Desktop", name: "文件夹2" },
+    { pwd: "/C/Desktop/文件夹2", name: "文件夹2-1" },
+    { pwd: "/C", name: "Document", nickname: "文档" },
+    { pwd: "/C", name: "Temp", nickname: "临时文件" },
+    { pwd: "/C", name: "System", nickname: "系统文件" },
+    { pwd: "/C", name: "SystemSoftware", nickname: "系统软件" },
+    { pwd: "/E", name: "文件夹1", nickname: "" },
+    { pwd: "/E", name: "文件夹2", nickname: "" },
+  ];
+  const initFile = [
+    { pwd: "/E/文件夹1", name: "文本文件2", content: "/E/文件夹1/文本文件2" },
+    { pwd: "/E/文件夹1", name: "文本文件3", content: "/E/文件夹1/文本文件3" },
+    { pwd: "/E", name: "文本文件1", content: "/E/文本文件1" },
+    { pwd: "/C/Desktop", name: "文本文件33", content: "新建文本文件33" },
+    { pwd: "/C/Desktop", name: "文本文件2", content: "新建文本文件2" },
+    { pwd: "/C/Desktop", name: "111.txt", content: "测试文件111" },
+    { pwd: "/C/Desktop/文件夹", name: "文件夹内容.txt", content: "文件夹内的文件" },
+  ];
+  await db.clearAll();
+  for (const i of initDir) {
+    let dir = new WebDir(i.pwd, i.name, i.nickname, i.system);
+    dir.setIcon(dir_str);
+    await dir.save();
+  }
+  for (const i of initFile) {
+    let file = new WebFile(i.pwd, i.name);
+    let names = i.name.split(".");
+    if (names.length > 1 && names[names.length - 1] === "txt") {
+      file.setIcon(txt_str);
+    } else {
+      file.setIcon(no_str);
+    }
+    await file.write(i.content || "");
+    await file.save();
+  }
+}
+
+// 首次运行创建初始文件
+await idbReady;
+const existingFiles = await db.findIndexAll(tableName, "_pwd", "/C/Desktop");
+if (!existingFiles || existingFiles.length === 0) {
+  await testFile();
+}
+
+export function loadSystemFile(config) {

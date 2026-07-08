@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick,defineAsyncComponent} from "vue";
 import systemDesktop from "@/components/system/desktop.vue";
 const desktopStart=ref(false)

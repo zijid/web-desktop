@@ -1,4 +1,4 @@
-function stringToBlobUrl(str, type) {
+﻿function stringToBlobUrl(str, type) {
   const blob = new Blob([str], { type });
   return URL.createObjectURL(blob);
 }
@@ -430,10 +430,10 @@ class WebDir extends FilesystemObject {
 export { WebFile, WebDir };
 
 async function testFile() {
+  // 只创建桌面和文档目录（侧边栏引用）
   const initDir = [
     { pwd: "/C", name: "Desktop", nickname: "桌面" },
     { pwd: "/C", name: "Document", nickname: "文档" },
-    { pwd: "/C", name: "Downloads", nickname: "下载" },
   ];
   const initFile = [];
   await db.clearAll();
@@ -441,17 +441,6 @@ async function testFile() {
     let dir = new WebDir(i.pwd, i.name, i.nickname, i.system);
     dir.setIcon(dir_str);
     await dir.save();
-  }
-  for (const i of initFile) {
-    let file = new WebFile(i.pwd, i.name);
-    let names = i.name.split(".");
-    if (names.length > 1 && names[names.length - 1] === "txt") {
-      file.setIcon(txt_str);
-    } else {
-      file.setIcon(no_str);
-    }
-    await file.write(i.content || "");
-    await file.save();
   }
 }
 // 首次运行创建初始文件

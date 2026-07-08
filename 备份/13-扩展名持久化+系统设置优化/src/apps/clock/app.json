@@ -1,0 +1,9 @@
+{
+  "name": "简约时钟",
+  "icon": "🕒",
+  "url": "index.html",
+  "windowWidth": 35,
+  "windowHeight": 30,
+  "minWidth": 250,
+  "minHeight": 180
+}
