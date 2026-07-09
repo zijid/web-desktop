@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { ref } from "vue";
 import systemDesktop from "@/components/system/desktop.vue";
 import BootAnimation from "@/components/system/BootAnimation.vue";
