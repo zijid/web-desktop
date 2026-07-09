@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 
 
 import { ref,reactive,computed,watch,watchEffect,onMounted,onUnmounted,nextTick,defineAsyncComponent} from "vue";
@@ -1319,6 +1319,29 @@ async function editNameBlue(){
 
 }
 
+// 桌面快捷方式
+async function createDesktopShortcut(app) {
+  const shortcut = new WebDir(config.desktop.path, app.nickname || app.name)
+  shortcut.uid = app.uid + '-shortcut'
+  shortcut.icon = app.icon
+  shortcut._appId = app._appId || app.uid
+  shortcut.nickname = (app.nickname || app.name)
+  await shortcut.save()
+  await system.initList(config.desktop.path)
+  initAppList()
+}
+
+function showStartAppMenu(e, app) {
+  bus.emit('menu-close')
+  const items = [
+    { title: '打开', hander: () => openApp(app) },
+    { type: 'separator' },
+    { title: '发送到桌面快捷方式', hander: () => createDesktopShortcut(app) }
+  ]
+  bus.emit('menu-show', { x: e.clientX, y: e.clientY, data: items })
+}
+
+
 
 function openApp(item, eventOrPos){
 
@@ -1948,7 +1971,7 @@ function f(){
 						</template>
 
 
-						<div v-for="app in systemApps" :key="app.uid" class="startAppItem" @click="openApp(app)">
+						<div v-for="app in systemApps" :key="app.uid" class="startAppItem" @click="openApp(app)" @contextmenu.prevent.stop="showStartAppMenu($event, app)">
 
 
 							<div class="startAppIcon" v-html="app.icon"></div>
