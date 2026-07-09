@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref } from "vue";
 import systemDesktop from "@/components/system/desktop.vue";
 import BootAnimation from "@/components/system/BootAnimation.vue";
@@ -21,7 +21,7 @@ function onBootComplete() {
   <Suspense v-if="showDesktop">
     <system-desktop />
     <template #fallback>
-      <div class="d pageLoading">加载中...</div>
+      <BootAnimation loading />
     </template>
   </Suspense>
 </template>

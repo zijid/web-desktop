@@ -5,6 +5,9 @@
  */
 import { ref, onMounted, nextTick } from 'vue'
 
+const props = defineProps({
+  loading: { type: Boolean, default: false }
+})
 const emit = defineEmits(['ready', 'complete'])
 const logRef = ref(null)
 
@@ -107,6 +110,7 @@ function delay(ms) {
 }
 
 onMounted(() => {
+  if (props.loading) return  // loading 模式只显示静态 UI
   runBootSequence()
 })
 
@@ -115,6 +119,7 @@ const dotCount = ref(0)
 let dotTimer = null
 
 onMounted(() => {
+  if (props.loading) return
   dotTimer = setInterval(() => {
     dotCount.value = (dotCount.value + 1) % 4
   }, 400)
