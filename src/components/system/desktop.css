@@ -42,6 +42,34 @@
 	height: 0px;
     background-color: rgb(199, 199, 199);
 }
+.taskbar-popup{
+	position: fixed;
+	transform: translateX(-50%);
+	background: rgba(30, 30, 30, 0.95);
+	border: 1px solid rgba(255,255,255,0.15);
+	border-radius: 4px;
+	padding: 2px 0;
+	min-width: 120px;
+	z-index: 999999;
+	box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+	animation: popupFadeIn 0.12s ease-out;
+}
+.taskbar-popup-item{
+	padding: 8px 16px;
+	color: #fff;
+	font-size: 12px;
+	cursor: default;
+	user-select: none;
+	white-space: nowrap;
+}
+.taskbar-popup-item:hover{
+	background: rgba(255,255,255,0.1);
+}
+@keyframes popupFadeIn{
+	from{opacity:0;transform:translateX(-50%) translateY(4px)}
+	to{opacity:1;transform:translateX(-50%) translateY(0)}
+}
+
 .app_box{
 	position: fixed;
 }
@@ -276,3 +304,4 @@
     background: #d0d0d0;
     margin: 4px 10px;
 }
+

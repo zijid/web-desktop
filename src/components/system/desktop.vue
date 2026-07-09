@@ -481,6 +481,8 @@ onMounted(()=>{
 
 
   document.addEventListener("click",closeStartMenu,true)
+  document.addEventListener("click",closeTaskbarPopup,true)
+  document.addEventListener("click",closeTaskbarPopup,true)
 
 
 	bg.value=config.desktop.bg.base64||config.desktop.bg.url
@@ -554,6 +556,8 @@ onUnmounted(()=>{
 
 
   document.removeEventListener("click",closeStartMenu,true)
+  document.removeEventListener("click",closeTaskbarPopup,true)
+  document.removeEventListener("click",closeTaskbarPopup,true)
 
 
   window.removeEventListener('app-registered', refreshAppList)
@@ -1219,6 +1223,21 @@ nextTick(()=>{
 
 
 
+
+const taskbarPopupPid = ref(null)
+const taskbarPopupVisible = ref(false)
+const taskbarPopupX = ref(0)
+const taskbarPopupY = ref(0)
+function showTaskbarPopup(e, progress) {
+  const rect = e.currentTarget.getBoundingClientRect()
+  taskbarPopupPid.value = progress.pid
+  taskbarPopupX.value = rect.left + rect.width / 2
+  taskbarPopupY.value = rect.top
+  taskbarPopupVisible.value = true
+}
+function closeTaskbarPopup() {
+  taskbarPopupVisible.value = false
+}
 
 function showApp(pid,index){
 
@@ -1940,7 +1959,7 @@ function f(){
 			<template v-for="(progress,index) in progressList" :key="progress.pid">
 
 
-				<div v-if="windowList.find(i=>i.pid===progress.pid)" class="app_item" :class="{active_app:activeAppPid===progress.pid}" @click="showApp(progress.pid,index)">
+				<div v-if="windowList.find(i=>i.pid===progress.pid)" class="app_item" :class="{active_app:activeAppPid===progress.pid}" @click="showApp(progress.pid,index)" @contextmenu.prevent.stop="showTaskbarPopup($event, progress)">
 
 
 					{{ progress.title }}
@@ -1957,6 +1976,14 @@ function f(){
 
 		</div>
 
+		<div v-if="taskbarPopupVisible" class="taskbar-popup"
+			:style="{
+				left: taskbarPopupX + 'px',
+				bottom: 'calc(var(--tab-height) + 8px)'
+			}"
+			@click.stop="closeTaskbarPopup()">
+			<div class="taskbar-popup-item" @click.stop="sysCloseWindow(taskbarPopupPid); closeTaskbarPopup()">关闭窗口</div>
+		</div>
 
 		<SystemInfo :visible='showSystemInfo' :appCount='getAllApps().filter(a=>!a.hidden).length' :fileCount='(fileList[config.desktop.path]||[]).length' @close='showSystemInfo=false' />
 
@@ -2031,6 +2058,11 @@ function f(){
 
 
 <style scoped src="./desktop.css"></style>
+
+
+
+
+
 
 
 

@@ -10,6 +10,7 @@ import { readFile, readFileAll, WebFile } from '@/utils/file'
 import { windowList } from '@/hooks'
 import { closeWindow as sysCloseWindow, createWindow, showWindow, hideWindow } from '@/system/window'
 import { ZDialog, ZButton, ZInput, useToast } from 'zijid-ui'
+import { bus } from '@/App'
 
 const toast = useToast()
 
@@ -375,6 +376,24 @@ function onMenu(a) {
   else if (a === 'lines') { showLines.value = !showLines.value; persistSettings() }
   else if (a === 'autosave') { autoSave.value = !autoSave.value; persistSettings() }
 }
+
+function showTextContextMenu(e) {
+  const ta = taRef.value
+  if (!ta) return
+  const menuData = [
+    { title: '撤销', hander: () => document.execCommand('undo') },
+    { title: '重做', hander: () => document.execCommand('redo') },
+    { type: 'separator' },
+    { title: '剪切', hander: () => document.execCommand('cut') },
+    { title: '复制', hander: () => document.execCommand('copy') },
+    { title: '粘贴', hander: () => { navigator.clipboard.readText().then(t => { if (t) { const s=ta.selectionStart, en=ta.selectionEnd; content.value = content.value.substring(0,s) + t + content.value.substring(en); nextTick(() => { ta.selectionStart = ta.selectionEnd = s+t.length; handleInput() }) } }).catch(() => { document.execCommand('paste') }) } },
+    { title: '删除', hander: () => { const s=ta.selectionStart, en=ta.selectionEnd; if (s!==en) { content.value = content.value.substring(0,s) + content.value.substring(en); nextTick(() => { ta.selectionStart = ta.selectionEnd = s; handleInput() }) } } },
+    { type: 'separator' },
+    { title: '全选', hander: () => { ta.select(); updateCur() } },
+  ]
+  bus.emit('menu-show', { x: e.clientX, y: e.clientY, data: menuData })
+}
+
 </script>
 
 <template>
@@ -427,7 +446,7 @@ function onMenu(a) {
       <div class="np-ln" v-if="showLines" @scroll="onScroll">
         <div v-for="n in lineCount" :key="n" class="npln" :class="{ cur: n === cursorPos.line }">{{ n }}</div>
       </div>
-      <textarea ref="taRef" class="npta" v-model="content"
+      <textarea ref="taRef" class="npta" v-model="content" @contextmenu.stop.prevent="showTextContextMenu($event)"
         @input="handleInput" @keydown="handleKeydown"
         @click="updateCur" @select="handleSelect" @scroll="onScroll"
         spellcheck="false"

@@ -1,10 +1,9 @@
-<script setup>
+﻿<script setup>
 /**
- * AppFrame — 通用应用运行容器
+ * AppFrame 鈥?閫氱敤搴旂敤杩愯瀹瑰櫒
  *
- * 自动适配两种应用类型：
- *   type='html'    → 通过 iframe 加载 url
- *   type='vue'     → 动态渲染 component
+ * 鑷姩閫傞厤涓ょ搴旂敤绫诲瀷锛? *   type='html'    鈫?閫氳繃 iframe 鍔犺浇 url
+ *   type='vue'     鈫?鍔ㄦ€佹覆鏌?component
  */
 import { ref, computed, watch, onMounted, onUnmounted, provide } from 'vue'
 
@@ -19,9 +18,9 @@ const props = defineProps({
   filePath:{ type: String, default: '' },
   args:    { type: String, default: '' },
   path:    { type: String, default: '' },
-  // 如果是 HTML 应用
+  // 濡傛灉鏄?HTML 搴旂敤
   url:     { type: String, default: '' },
-  // 如果是 Vue 组件应用
+  // 濡傛灉鏄?Vue 缁勪欢搴旂敤
   component: { type: [Object, Function], default: null }
 })
 
@@ -30,7 +29,7 @@ const resolvedFilePath = computed(() => props.filePath || props.path)
 
 const emit = defineEmits(['close', 'focus'])
 
-// 判断应用类型
+// 鍒ゆ柇搴旂敤绫诲瀷
 const isHtmlApp = computed(() => !!props.url)
 const imageDataUrl = ref('')
 const iframeKey = ref(0)
@@ -67,7 +66,7 @@ const resolvedUrl = computed(() => {
   return base
 })
 
-// 提供应用上下文，Vue 组件可通过 inject('appContext') 接收
+// 鎻愪緵搴旂敤涓婁笅鏂囷紝Vue 缁勪欢鍙€氳繃 inject('appContext') 鎺ユ敹
 provide('appContext', {
   appId: props.appId,
   title: props.title,
@@ -77,7 +76,7 @@ provide('appContext', {
   args: props.args
 })
 
-// iframe 消息通信
+// iframe 娑堟伅閫氫俊
 const iframeRef = ref(null)
 
 function handleIframeMessage(e) {
@@ -133,8 +132,10 @@ onMounted(() => {
         const doc = iframe.contentDocument || iframe.contentWindow.document
         doc.addEventListener('click', () => emit('focus', props.pid))
         doc.addEventListener('mousedown', () => emit('focus', props.pid))
+        // Prevent default browser context menu in iframe
+        doc.addEventListener('contextmenu', (ce) => ce.preventDefault())
       } catch(e) {
-        // 跨域 iframe 无法访问，忽略
+        // 璺ㄥ煙 iframe 鏃犳硶璁块棶锛屽拷鐣?
       }
     })
   }
@@ -144,7 +145,7 @@ onUnmounted(() => window.removeEventListener('message', handleIframeMessage))
 </script>
 
 <template>
-  <!-- HTML 应用：iframe 加载 -->
+  <!-- HTML 搴旂敤锛歩frame 鍔犺浇 -->
   <iframe
     v-if="isHtmlApp"
     ref="iframeRef"
@@ -154,7 +155,7 @@ onUnmounted(() => window.removeEventListener('message', handleIframeMessage))
     frameborder="0"
   ></iframe>
 
-  <!-- Vue 组件应用：动态渲染 -->
+  <!-- Vue 缁勪欢搴旂敤锛氬姩鎬佹覆鏌?-->
   <component
     v-else-if="component"
     :is="component"
@@ -167,10 +168,10 @@ onUnmounted(() => window.removeEventListener('message', handleIframeMessage))
     class="app-vue"
   />
 
-  <!-- 降级提示 -->
+  <!-- 闄嶇骇鎻愮ず -->
   <div v-else class="app-empty">
-    <p>应用 "{{ appId }}" 无法加载</p>
-    <p class="hint">请检查是否已注册正确的组件或 URL</p>
+    <p>搴旂敤 "{{ appId }}" 鏃犳硶鍔犺浇</p>
+    <p class="hint">璇锋鏌ユ槸鍚﹀凡娉ㄥ唽姝ｇ‘鐨勭粍浠舵垨 URL</p>
   </div>
 </template>
 
@@ -201,3 +202,5 @@ onUnmounted(() => window.removeEventListener('message', handleIframeMessage))
   color: #aaa;
 }
 </style>
+
+

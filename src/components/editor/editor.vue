@@ -3,9 +3,11 @@
  * 代码编辑器 - 查看和编辑源代码
  */
 import { ref, onMounted, nextTick } from 'vue'
+const taRef = ref(null)
 import { readFile } from '@/utils/file'
 import { windowList } from '@/hooks'
 import { closeWindow } from '@/system/window'
+import { bus } from '@/App'
 
 const props = defineProps({
   title: { type: String, default: '代码编辑器' },
@@ -131,6 +133,24 @@ onMounted(() => {
   console.log('[Editor] mounted, args:', props.args, 'filePath:', props.filePath, 'url:', url)
   if (url) loadFile(url)
 })
+
+
+function showTextContextMenu(e) {
+  const ta = taRef.value
+  if (!ta) return
+  const menuData = [
+    { title: '撤销', hander: () => document.execCommand('undo') },
+    { title: '重做', hander: () => document.execCommand('redo') },
+    { type: 'separator' },
+    { title: '剪切', hander: () => document.execCommand('cut') },
+    { title: '复制', hander: () => document.execCommand('copy') },
+    { title: '粘贴', hander: () => { navigator.clipboard.readText().then(t => { if (t) { const s=ta.selectionStart, en=ta.selectionEnd; code.value = code.value.substring(0,s) + t + code.value.substring(en); nextTick(() => { ta.selectionStart = ta.selectionEnd = s+t.length; handleInput() }) } }).catch(() => { document.execCommand('paste') }) } },
+    { title: '删除', hander: () => { const s=ta.selectionStart, en=ta.selectionEnd; if (s!==en) { code.value = code.value.substring(0,s) + code.value.substring(en); nextTick(() => { ta.selectionStart = ta.selectionEnd = s; handleInput() }) } } },
+    { type: 'separator' },
+    { title: '全选', hander: () => { ta.select() } },
+  ]
+  bus.emit('menu-show', { x: e.clientX, y: e.clientY, data: menuData })
+}
 </script>
 
 <template>
@@ -145,10 +165,12 @@ onMounted(() => {
         <div v-for="n in lineCount" :key="n" class="line-num">{{ n }}</div>
       </div>
       <textarea
+        ref="taRef"
         class="editor-textarea"
         v-model="code"
         @input="handleInput"
         @keydown="handleKeydown"
+        @contextmenu.stop.prevent="showTextContextMenu($event)"
         spellcheck="false"
         wrap="off"
         placeholder="在此输入代码..."
