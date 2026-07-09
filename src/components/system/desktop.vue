@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 
 
 import { ref,reactive,computed,watch,watchEffect,onMounted,onUnmounted,nextTick,defineAsyncComponent} from "vue";
@@ -116,6 +116,45 @@ const appList=ref([...data])
 
 
 const bg=ref("")
+const bgMode=ref(localStorage.getItem('web-desktop-bg-mode') || 'cover')
+
+const bgStyle=computed(()=>{
+  const mode = bgMode.value
+  if (!bg.value) return {}
+  const styles = { backgroundImage: `url(${bg.value})` }
+  switch (mode) {
+    case 'cover':
+      styles.backgroundSize = 'cover'
+      styles.backgroundRepeat = 'no-repeat'
+      styles.backgroundPosition = 'center center'
+      break
+    case 'contain':
+      styles.backgroundSize = 'contain'
+      styles.backgroundRepeat = 'no-repeat'
+      styles.backgroundPosition = 'center center'
+      break
+    case 'fill':
+      styles.backgroundSize = '100% 100%'
+      styles.backgroundRepeat = 'no-repeat'
+      styles.backgroundPosition = 'center center'
+      break
+    case 'center':
+      styles.backgroundSize = 'auto'
+      styles.backgroundRepeat = 'no-repeat'
+      styles.backgroundPosition = 'center center'
+      break
+    case 'tile':
+      styles.backgroundSize = 'auto'
+      styles.backgroundRepeat = 'repeat'
+      styles.backgroundPosition = '0 0'
+      break
+    default:
+      styles.backgroundSize = 'cover'
+      styles.backgroundRepeat = 'no-repeat'
+      styles.backgroundPosition = 'center center'
+  }
+  return styles
+})
 
 
 const systemAppList=[]
@@ -324,7 +363,16 @@ function initAppList(){
 	}
 
 
-	appList.value.sort(({createTime:a},{createTime:b})=>a-b)
+	appList.value.sort((a, b) => {
+		// 此电脑始终在第一位
+		if (a.uid === 'this-pc') return -1
+		if (b.uid === 'this-pc') return 1
+		// 文件夹排在文件前面
+		if (a.type === 'WebDir' && b.type !== 'WebDir') return -1
+		if (a.type !== 'WebDir' && b.type === 'WebDir') return 1
+		// 按名称排序
+		return (a.name || '').localeCompare(b.name || '', 'zh-CN')
+	})
 
 
 }
@@ -438,9 +486,12 @@ onMounted(()=>{
 	const savedBg = localStorage.getItem('web-desktop-bg')
 	const savedPath = localStorage.getItem('web-desktop-desktop-path')
 	if (savedBg) bg.value = savedBg
+const savedMode = localStorage.getItem('web-desktop-bg-mode')
+if (savedMode) bgMode.value = savedMode
 	if (savedPath) config.desktop.path = savedPath
 
 	bus.on('wallpaper-change', (url) => { bg.value = url })
+bus.on('wallpaper-mode-change', (mode) => { bgMode.value = mode })
   bus.on('file-list-changed', (path) => { console.log('[Desktop] file-list-changed:', path); system.initList(path).then(() => { initAppList() }) })
   bus.on('file-list-changed', (path) => { system.initList(path).then(() => { initAppList() }) })
 
@@ -823,7 +874,7 @@ async function showMenu(e,i){
 		})
 
 
-		if(i.pwd!=="/system-app"){
+		if(i.pwd!=="/system-app" && i.uid!=="this-pc"){
 
 
 			menuDatas.value.push({
@@ -976,25 +1027,6 @@ async function showMenu(e,i){
 const menuData=[
 
 
-	{
-
-
-		title:"属性",
-
-
-		icon:`<?xml version="1.0" encoding="UTF-8"?><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4C12.9543 4 4 12.9543 4 24C4 35.0457 12.9543 44 24 44Z" fill="none" stroke="#333" stroke-width="4"/><path d="M24 16V24" stroke="#333" stroke-width="4" stroke-linecap="round"/><circle cx="24" cy="32" r="2" fill="#333"/></svg>`,
-
-
-		hander:()=>{
-
-
-      showSystemInfo.value=true
-
-
-		}
-
-
-	},
 
 
 	{
@@ -1114,8 +1146,26 @@ const menuData=[
 		hander: () => { launchApp('system-settings', { title: '系统设置' }) }
 
 
-	}
+	},
 
+
+	{
+
+
+		title:"属性",
+
+
+		icon:`<?xml version="1.0" encoding="UTF-8"?><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4C12.9543 4 4 12.9543 4 24C4 35.0457 12.9543 44 24 44Z" fill="none" stroke="#333" stroke-width="4"/><path d="M24 16V24" stroke="#333" stroke-width="4" stroke-linecap="round"/><circle cx="24" cy="32" r="2" fill="#333"/></svg>`,
+
+
+		hander:()=>{
+
+
+      showSystemInfo.value=true
+
+
+		}
+	}
 
 ]
 
@@ -1685,7 +1735,7 @@ function f(){
 	<div :style="{opacity:opacity}" style="transition: opacity 0.3s;position: fixed;right: 1em;text-shadow: 1px 1px 1px #fff;color: #000;font-size: 12px;">当前焦点目录:{{ selectPath }}</div>
 
 
-	<div @focus="f" ref="desktop" tabindex="1" class="desktop" :class="{ 'drag-over': desktopDragOver }" :style="{backgroundImage:`url(${bg})`}" @click.stop="selectAppListEmpty" @click="editNameBlue" @contextmenu.prevent="showMenu($event,{alias:'desktop',path:config.desktop.path})" @dragover.prevent="onDesktopDragOver" @dragleave.prevent="onDesktopDragLeave" @drop.prevent="onDesktopDrop">
+	<div @focus="f" ref="desktop" tabindex="1" class="desktop" :class="{ 'drag-over': desktopDragOver }" :style="bgStyle" @click.stop="selectAppListEmpty" @click="editNameBlue" @contextmenu.prevent="showMenu($event,{alias:'desktop',path:config.desktop.path})" @dragover.prevent="onDesktopDragOver" @dragleave.prevent="onDesktopDragLeave" @drop.prevent="onDesktopDrop">
 
 
 		<Menu></Menu>
@@ -1799,7 +1849,7 @@ function f(){
 			<template v-for="(progress,index) in progressList" :key="progress.pid">
 
 
-			<component v-if="progress.exec" :is="progress.exec" :path="progress.path" :file-path="progress.path" :pid="progress.pid" ref="app" />
+			<component v-if="progress.exec" :is="progress.exec" :path="progress.path || '/'" :pid="progress.pid" ref="app" />
 
 
 			<Window v-else :pid="progress.pid" :title="progress.title" :path="progress.path" :initW="progress.windowWidth ?? 50" :initH="progress.windowHeight ?? 60">

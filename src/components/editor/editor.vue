@@ -29,20 +29,46 @@ function updateLineCount() {
 }
 
 function loadFile(url) {
-  // 去除 view-source: 前缀
   let realUrl = url
   if (realUrl.startsWith('view-source:')) {
     realUrl = realUrl.replace(/^view-source:/, '')
   }
   fileUrl.value = realUrl
   statusText.value = '加载中...'
-  
-  // 对于源文件，尝试使用 raw 参数获取原始内容
+
+  if (realUrl.startsWith('/')) {
+    readFile(realUrl).then(file => {
+      if (file && file.content !== undefined) {
+        let text = file.content
+        if (typeof text === 'string' && text.startsWith('data:')) {
+          const commaIdx = text.indexOf(',')
+          if (commaIdx >= 0) {
+            try {
+              text = decodeURIComponent(atob(text.substring(commaIdx + 1).split(';')[0]))
+            } catch(e) {
+              text = '// Unable to decode file content'
+            }
+          }
+        }
+        code.value = text
+        updateLineCount()
+        statusText.value = '已加载'
+      } else {
+        statusText.value = '文件为空'
+        code.value = ''
+      }
+    }).catch(err => {
+      statusText.value = '加载失败'
+      code.value = '// 无法加载文件: ' + err.message + '\n// 路径: ' + realUrl
+    })
+    return
+  }
+
   let fetchUrl = realUrl
   if (realUrl.includes('/src/') && (realUrl.endsWith('.vue') || realUrl.endsWith('.js') || realUrl.endsWith('.css') || realUrl.endsWith('.html'))) {
     fetchUrl = realUrl + (realUrl.includes('?') ? '&' : '?') + 'raw'
   }
-  
+
   fetch(fetchUrl)
     .then(res => {
       if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText)

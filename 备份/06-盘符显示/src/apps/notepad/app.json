@@ -1,9 +1,0 @@
-{
-  "name": "记事本",
-  "icon": "notepad.svg",
-  "extensions": ["txt", "md", "js", "html", "css", "json", "xml", "ini", "cfg"],
-  "windowWidth": 55,
-  "windowHeight": 60,
-  "minWidth": 300,
-  "minHeight": 200
-}

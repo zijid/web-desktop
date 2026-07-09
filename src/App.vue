@@ -1,23 +1,29 @@
 <script setup>
-import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick,defineAsyncComponent} from "vue";
+import { ref } from "vue";
 import systemDesktop from "@/components/system/desktop.vue";
-const desktopStart=ref(false)
-setTimeout(()=>{
-	
-	desktopStart.value=true
-},100)
+import BootAnimation from "@/components/system/BootAnimation.vue";
+
+const bootEnabled = localStorage.getItem('web-desktop-boot-enabled') !== 'false'
+const showBoot = ref(bootEnabled)
+const showDesktop = ref(!bootEnabled)
+
+function onBootReady() {
+  showDesktop.value = true
+}
+
+function onBootComplete() {
+  showBoot.value = false
+}
 </script>
 
 <template>
-	<Suspense>
-		<system-desktop></system-desktop>
-		<!-- 鍦?#fallback 鎻掓Ы涓樉绀?鈥滄鍦ㄥ姞杞戒腑鈥?-->
-		<template #fallback>
-			<div v-cloak class="d pageLoading">
-				鍔犺浇涓?
-			</div>
-		</template>
-	</Suspense>
+  <BootAnimation v-if="showBoot" @ready="onBootReady" @complete="onBootComplete" />
+  <Suspense v-if="showDesktop">
+    <system-desktop />
+    <template #fallback>
+      <div class="d pageLoading">加载中...</div>
+    </template>
+  </Suspense>
 </template>
 
 <style scoped src="./App.css"></style>

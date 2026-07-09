@@ -1,4 +1,4 @@
-function stringToBlobUrl(str, type) {
+﻿function stringToBlobUrl(str, type) {
   const blob = new Blob([str], { type });
   return URL.createObjectURL(blob);
 }
@@ -7,7 +7,7 @@ const utils = {
   uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8) }
 };
 
-// 纯 IndexedDB 封装，无需外部依赖
+// 绾?IndexedDB 灏佽锛屾棤闇€澶栭儴渚濊禆
 function openIndexedDB(dbName, version, upgradeFn) {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(dbName, version);
@@ -103,13 +103,13 @@ function createFileError(message) {
 }
 
 async function _readFile(path) {
-// 首次运行创建初始文件
+// 棣栨杩愯鍒涘缓鍒濆鏂囦欢
   await idbReady;
   return await db.find(tableName, path);
 }
 
 async function _readAll(path) {
-// 首次运行创建初始文件
+// 棣栨杩愯鍒涘缓鍒濆鏂囦欢
   await idbReady;
   return await db.findIndexAll(tableName, "_pwd", path);
 }
@@ -119,7 +119,7 @@ async function _writeFile(path, content) {
 }
 
 async function _removeFile(path) {
-// 首次运行创建初始文件
+// 棣栨杩愯鍒涘缓鍒濆鏂囦欢
   await idbReady;
   return await db.delete(tableName, path);
 }
@@ -210,7 +210,7 @@ class FilesystemObject {
     function getNewName(path, name) {
       return readFile(pathJoin(path, name)).then(res => {
         if (res) {
-          const newName = window.prompt("名称重复请重新输入", name);
+          const newName = window.prompt("Name exists, please re-enter:", name);
           if (newName === null) return null;
           else return getNewName(path, newName);
         } else {
@@ -316,7 +316,7 @@ class WebFile extends FilesystemObject {
   constructor(pwd, name, nickname) {
     if (nickname === undefined) nickname = "";
     if (!pwd || !name) {
-      throw createFileError("创建文件失败，无路径或文件名:pwd:" + pwd + " name:" + name);
+      throw createFileError("鍒涘缓鏂囦欢澶辫触锛屾棤璺緞鎴栨枃浠跺悕:pwd:" + pwd + " name:" + name);
     }
     super();
     this.name = name;
@@ -379,7 +379,7 @@ class WebDir extends FilesystemObject {
   constructor(pwd, name, nickname, system) {
     if (system === undefined) system = false;
     if (!pwd || !name) {
-      throw createFileError("创建文件夹失败，无路径或文件夹名:pwd:" + pwd + " name:" + name);
+      throw createFileError("鍒涘缓鏂囦欢澶瑰け璐ワ紝鏃犺矾寰勬垨鏂囦欢澶瑰悕:pwd:" + pwd + " name:" + name);
     }
     super();
     this.pwd = pwd;
@@ -454,7 +454,7 @@ async function testFile() {
     await file.save();
   }
 }
-// 首次运行创建初始文件
+// 棣栨杩愯鍒涘缓鍒濆鏂囦欢
 await idbReady;
 const existingFiles = await db.findIndexAll(tableName, "_pwd", "/C/Desktop");
 if (!existingFiles || existingFiles.length === 0) {
@@ -494,6 +494,6 @@ export async function readFile(path) {
   return dbToFile(dbFile);
 }
 
-
-
-
+export async function deleteFile(path) {
+  return await _removeFile(path);
+}

@@ -1,9 +1,0 @@
-{
-  "name": "代码编辑器",
-  "icon": "<svg width=\"24\" height=\"24\" viewBox=\"0 0 48 48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M34 6H14C9 6 6 9 6 14V34C6 39 9 42 14 42H34C39 42 42 39 42 34V14C42 9 39 6 34 6Z\" fill=\"none\" stroke=\"#333\" stroke-width=\"4\"/><path d=\"M27 16L33 24L27 32\" stroke=\"#333\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M21 16L15 24L21 32\" stroke=\"#333\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
-  "extensions": ["txt", "md", "js", "html", "css", "json", "xml", "ini", "cfg"],
-  "windowWidth": 70,
-  "windowHeight": 80,
-  "minWidth": 400,
-  "minHeight": 300
-}

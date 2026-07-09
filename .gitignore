@@ -22,3 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Build artifacts
+/备份/
+_fix_*.py
+_debug_*.*
+*.tmp
+vite-output.txt
+temp_section.txt
+/public/bg/*.png
+/public/apps/*/
+

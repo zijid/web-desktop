@@ -12,7 +12,8 @@ import { getConfig } from '@/system'
 
 const props = defineProps({
   title: { type: String, default: '新软件制作工具' },
-  pid: { type: Number, default: 0 }
+  pid: { type: Number, default: 0 },
+  path: { type: String, default: '' }
 })
 
 // ===== 表单数据 =====

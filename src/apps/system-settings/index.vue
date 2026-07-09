@@ -12,7 +12,8 @@ import Win from '@/components/window/window.vue'
 
 const props = defineProps({
   title: { type: String, default: '系统设置' },
-  pid: { type: Number, default: 0 }
+  pid: { type: Number, default: 0 },
+  path: { type: String, default: '' }
 })
 
 const navItems = [
@@ -25,6 +26,11 @@ const navItems = [
     id: 'desktop',
     label: '桌面设置',
     icon: '<svg width="16" height="16" viewBox="0 0 48 48" fill="none"><path d="M4 7H44V35H4V7Z" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/><path d="M4 35H44V39H4V35Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/><path d="M24 35V43" stroke="currentColor" stroke-width="4"/><path d="M16 43H32" stroke="currentColor" stroke-width="4"/></svg>'
+  },
+  {
+    id: 'boot',
+    label: '启动设置',
+    icon: '<svg width="16" height="16" viewBox="0 0 48 48" fill="none"><path d="M24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4C12.9543 4 4 12.9543 4 24C4 35.0457 12.9543 44 24 44Z" fill="none" stroke="currentColor" stroke-width="4"/><path d="M24 4V24L34 34" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>'
   },
   {
     id: 'reset',
@@ -113,6 +119,7 @@ function getAssociatedAppName(ext) {
 // ===== 桌面设置 =====
 const wallpaperUrl = ref('')
 const desktopPath = ref('')
+const bgMode = ref(localStorage.getItem('web-desktop-bg-mode') || 'cover')
 let config = null
 
 function solidColorDataUrl(color) {
@@ -121,7 +128,13 @@ function solidColorDataUrl(color) {
 }
 
 const presetWallpapers = [
-  { name: '极光', url: '/bg53k.jpg', color: '#0078d4' },
+  // bg/ 文件夹中的图片壁纸
+  { name: '黑色', url: '/bg/black.png' },
+  { name: '蓝色', url: '/bg/blue.png' },
+  { name: '粉色', url: '/bg/pink.png' },
+  { name: '紫色', url: '/bg/purple.png' },
+
+  // 纯色壁纸
   { name: '纯黑', url: '', color: '#000000' },
   { name: '纯白', url: '', color: '#ffffff' },
   { name: '深空灰', url: '', color: '#2d2d2d' },
@@ -131,11 +144,48 @@ const presetWallpapers = [
   { name: '天空蓝', url: '', color: '#3498db' }
 ]
 
+// ===== 启动设置 =====
+const bootEnabled = ref(localStorage.getItem('web-desktop-boot-enabled') !== 'false')
+const bootShowLogs = ref(localStorage.getItem('web-desktop-boot-show-logs') !== 'false')
+const bootTime = ref(parseInt(localStorage.getItem('web-desktop-boot-time') || '5', 10))
+
+function saveBootSetting(key, val) {
+  if (key === 'time') {
+    localStorage.setItem('web-desktop-boot-' + key, String(val))
+  } else {
+    localStorage.setItem('web-desktop-boot-' + key, val ? 'true' : 'false')
+  }
+}
+
+function previewBoot() {
+  // 创建临时遮罩预览开机动画
+  const div = document.createElement('div')
+  div.id = 'boot-preview-overlay'
+  div.innerHTML = '<div style="position:fixed;inset:0;z-index:999999;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:Segoe UI,Microsoft YaHei,sans-serif;animation:fadeIn 0.3s"><div style="width:48px;height:48px;margin-bottom:12px"><svg viewBox="0 0 48 48" fill="none" style="width:48px;height:48px"><rect x="4" y="10" width="40" height="28" rx="3" fill="#0078d4" stroke="#005a9e" stroke-width="2"/><rect x="10" y="17" width="28" height="2" rx="1" fill="#fff" opacity="0.25"/><rect x="10" y="21" width="28" height="2" rx="1" fill="#fff" opacity="0.25"/><rect x="10" y="25" width="28" height="2" rx="1" fill="#fff" opacity="0.25"/><circle cx="37" cy="26" r="2.5" fill="#fff"/></svg></div><div style="font-size:18px;font-weight:300;letter-spacing:2px;color:#e0e0e0;margin-bottom:24px">Web Desktop</div><div style="display:flex;gap:6px;margin-bottom:16px"><span style="width:8px;height:8px;border-radius:50%;background:#0078d4;animation:dotBounce 0.8s ease-in-out infinite"></span><span style="width:8px;height:8px;border-radius:50%;background:#0078d4;animation:dotBounce 0.8s ease-in-out 0.2s infinite"></span><span style="width:8px;height:8px;border-radius:50%;background:#0078d4;animation:dotBounce 0.8s ease-in-out 0.4s infinite"></span></div><div style="font-size:12px;color:#a0a0a0;margin-bottom:8px">正在初始化...</div><div style="width:240px;height:2px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden"><div style="height:100%;width:60%;background:linear-gradient(90deg,#0078d4,#00bcd4);border-radius:2px;animation:progressMove 1.5s ease-in-out infinite"></div></div><button onclick="this.parentElement.remove()" style="margin-top:32px;padding:6px 24px;border:1px solid rgba(255,255,255,0.2);border-radius:4px;background:transparent;color:#a0a0a0;font-size:12px;cursor:pointer">关闭预览</button></div><style>@keyframes dotBounce{0%,100%{transform:translateY(0);opacity:0.4}50%{transform:translateY(-6px);opacity:1}}@keyframes progressMove{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}@keyframes fadeIn{from{opacity:0}to{opacity:1}}</style>'
+  document.body.appendChild(div)
+}
+
+const bgModes = [
+  { id: 'cover', label: '覆盖', desc: '等比例缩放填满屏幕，可能裁剪边缘' },
+  { id: 'contain', label: '适应', desc: '完整显示整张图片，可能留黑边' },
+  { id: 'fill', label: '拉伸', desc: '拉伸铺满，可能变形' },
+  { id: 'center', label: '居中', desc: '原始大小居中显示' },
+  { id: 'tile', label: '平铺', desc: '原始大小重复平铺' }
+]
+
+function selectBgMode(mode) {
+  bgMode.value = mode
+  localStorage.setItem('web-desktop-bg-mode', mode)
+  try { bus.emit('wallpaper-mode-change', mode) } catch(e) {}
+}
+
 function loadDesktopSettings() {
   config = getConfig()
   if (!config) return
   wallpaperUrl.value = config.desktop?.bg?.base64 || config.desktop?.bg?.url || ''
   desktopPath.value = config.desktop?.path || '/C/Desktop'
+  const saved = localStorage.getItem('web-desktop-bg-mode')
+  if (saved) bgMode.value = saved
 }
 
 function isActivePreset(item) {
@@ -179,6 +229,9 @@ function applyWallpaper(url) {
     config.desktop.bg = url.startsWith('data:') ? { url: '', base64: url } : { url, base64: '' }
     localStorage.setItem('web-desktop-bg', url)
     bus.emit('wallpaper-change', url)
+    // 同时保存当前背景模式
+    localStorage.setItem('web-desktop-bg-mode', bgMode.value)
+    bus.emit('wallpaper-mode-change', bgMode.value)
     statusMsg.value = '壁纸已更新'
   } else {
     statusMsg.value = '不支持的图片格式'
@@ -410,7 +463,7 @@ onMounted(() => {
                   class="preset-card"
                   :class="{ active: isActivePreset(item) }"
                   @click="selectPresetWallpaper(item)">
-                  <div class="preset-thumb" :style="{ background: item.color }">
+                  <div class="preset-thumb" :style="{ background: item.color || '#222' }">
                     <img v-if="item.url" :src="item.url" :alt="item.name" />
                   </div>
                   <span class="preset-name">{{ item.name }}</span>
@@ -434,6 +487,21 @@ onMounted(() => {
                 </div>
               </div>
 
+              <h3 class="section-title" style="margin-top:20px">背景显示方式</h3>
+              <div class="bg-mode-grid">
+                <div v-for="m in bgModes" :key="m.id"
+                  class="bg-mode-card"
+                  :class="{ active: bgMode === m.id }"
+                  @click="selectBgMode(m.id)">
+                  <div class="bg-mode-preview">
+                    <div class="bg-mode-thumb" :class="'bg-preview-' + m.id">
+                      <div class="bg-preview-img"></div>
+                    </div>
+                  </div>
+                  <span class="bg-mode-label">{{ m.label }}</span>
+                </div>
+              </div>
+
               <h3 class="section-title" style="margin-top:20px">桌面路径</h3>
               <div class="input-row">
                 <label class="input-label">路径</label>
@@ -441,6 +509,41 @@ onMounted(() => {
                 <button class="btn-primary" @click="updateDesktopPath">保存</button>
               </div>
               <p class="field-hint" style="margin-top:4px;margin-left:0">修改后刷新桌面生效</p>
+            </div>
+          </template>
+
+          <!-- 启动设置 -->
+          <template v-if="activeNav === 'boot'">
+            <div class="section">
+              <h3 class="section-title">启动设置</h3>
+
+              <div class="setting-row">
+                <label class="setting-label">开机动画</label>
+                <label class="toggle-switch">
+                  <input type="checkbox" v-model="bootEnabled" @change="saveBootSetting('enabled', bootEnabled)" />
+                  <span class="toggle-slider"></span>
+                </label>
+                <span class="setting-hint">{{ bootEnabled ? '已开启' : '已关闭' }}</span>
+              </div>
+
+              <div class="setting-row">
+                <label class="setting-label">显示加载日志</label>
+                <label class="toggle-switch">
+                  <input type="checkbox" v-model="bootShowLogs" @change="saveBootSetting('show-logs', bootShowLogs)" />
+                  <span class="toggle-slider"></span>
+                </label>
+                <span class="setting-hint">{{ bootShowLogs ? '已显示' : '已隐藏' }}</span>
+              </div>
+
+              <div class="setting-row">
+                <label class="setting-label">启动耗时</label>
+                <input type="range" min="2" max="10" step="1" v-model.number="bootTime" @change="saveBootSetting('time', bootTime)" class="time-slider" />
+                <span class="setting-hint">{{ bootTime }} 秒</span>
+              </div>
+
+              <div class="setting-preview">
+                <button class="btn-primary" @click="previewBoot">预览开机动画</button>
+              </div>
             </div>
           </template>
 
@@ -547,6 +650,91 @@ onMounted(() => {
 }
 .preset-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .preset-name { font-size: 11px; color: #555; white-space: nowrap; }
+.bg-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 90px);
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.bg-mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px 6px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: default;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.bg-mode-card:hover {
+  border-color: #0078d4;
+  box-shadow: 0 1px 6px rgba(0,120,212,0.15);
+}
+.bg-mode-card.active {
+  border-color: #0078d4;
+  background: #e8f4fd;
+  box-shadow: 0 0 0 1px #0078d4;
+}
+.bg-mode-preview {
+  width: 64px;
+  height: 40px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #2d2d2d;
+}
+.bg-mode-thumb {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bg-preview-img {
+  width: 20px;
+  height: 14px;
+  background: linear-gradient(135deg, #0078d4 25%, #00bcd4 75%);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.bg-preview-cover .bg-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0;
+}
+.bg-preview-contain .bg-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 0;
+}
+.bg-preview-fill .bg-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  border-radius: 0;
+}
+.bg-preview-center .bg-preview-img {
+  object-fit: none;
+}
+.bg-preview-tile .bg-preview-img {
+  width: 8px;
+  height: 8px;
+  object-fit: none;
+  background-repeat: repeat;
+  background-size: 8px 8px;
+}
+.bg-mode-label {
+  font-size: 11px;
+  color: #555;
+  white-space: nowrap;
+}
 .custom-section {
   background: #fff; border: 1px solid #e0e0e0;
   border-radius: 6px; padding: 12px 14px; margin-bottom: 4px;
@@ -591,6 +779,36 @@ onMounted(() => {
   padding: 6px 16px; border-radius: 4px; font-size: 13px; cursor: pointer;
 }
 .btn-cancel:hover { background: #e0e0e0; }
+
+.setting-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid #f0f0f0;
+}
+.setting-row:last-of-type { border-bottom: none; }
+.setting-label { font-size: 13px; color: #444; min-width: 100px; }
+.setting-hint { font-size: 12px; color: #999; }
+.setting-preview { margin-top: 16px; }
+.time-slider { width: 120px; accent-color: #0078d4; cursor: pointer; }
+
+/* Toggle switch */
+.toggle-switch {
+  position: relative; display: inline-block;
+  width: 40px; height: 20px; cursor: pointer;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0;
+  background: #ccc; border-radius: 20px;
+  transition: background 0.2s;
+}
+.toggle-slider::before {
+  content: ''; position: absolute;
+  width: 16px; height: 16px; left: 2px; bottom: 2px;
+  background: #fff; border-radius: 50%;
+  transition: transform 0.2s;
+}
+.toggle-switch input:checked + .toggle-slider { background: #0078d4; }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
 
 .backup-actions { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
 .backup-status { font-size: 13px; color: #0078d4; margin: 8px 0; }

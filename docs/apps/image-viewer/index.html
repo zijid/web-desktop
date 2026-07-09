@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图片查看器</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #1e1e1e;
+    --toolbar-bg: #2d2d2d;
+    --toolbar-hover: #3c3c3c;
+    --border: #3c3c3c;
+    --text: #e0e0e0;
+    --text-dim: #999;
+    --accent: #0078d4;
+    --accent-hover: #1a8ae8;
+    --viewer-bg: #111;
+    --scrollbar: #424242;
+    --scrollbar-hover: #555;
+  }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif; font-size: 13px; user-select: none; }
+  body { display: flex; flex-direction: column; }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex; align-items: center; padding: 0 8px;
+    background: var(--toolbar-bg); border-bottom: 1px solid var(--border);
+    height: 40px; flex-shrink: 0; gap: 2px;
+  }
+  .toolbar-group { display: flex; align-items: center; gap: 2px; }
+  .toolbar-sep { width: 1px; height: 24px; background: var(--border); margin: 0 6px; flex-shrink: 0; }
+  .toolbar-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border: none; background: transparent;
+    color: var(--text); cursor: pointer; border-radius: 4px;
+    position: relative;
+  }
+  .toolbar-btn:hover { background: var(--toolbar-hover); }
+  .toolbar-btn:active { background: #4a4a4a; }
+  .toolbar-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .toolbar-btn.disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+  .toolbar-btn .badge {
+    position: absolute; top: 2px; right: 2px;
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+  .toolbar-label {
+    color: var(--text); font-size: 12px; padding: 0 8px;
+    white-space: nowrap; min-width: 48px; text-align: center;
+  }
+  .toolbar-filename {
+    flex: 1; min-width: 0;
+    color: var(--text-dim); font-size: 12px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    padding: 0 12px; text-align: center;
+  }
+  .toolbar-btn-text {
+    display: flex; align-items: center; gap: 4px;
+    padding: 4px 10px; height: 32px; border: none; background: transparent;
+    color: var(--text); cursor: pointer; border-radius: 4px; font-size: 12px;
+    font-family: inherit;
+  }
+  .toolbar-btn-text:hover { background: var(--toolbar-hover); }
+  .toolbar-btn-text svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .zoom-slider {
+    width: 80px; height: 4px; -webkit-appearance: none; appearance: none;
+    background: #555; border-radius: 2px; outline: none; cursor: pointer;
+    margin: 0 4px;
+  }
+  .zoom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--accent); border: 2px solid #fff; cursor: pointer;
+  }
+  .zoom-slider::-moz-range-thumb {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--accent); border: 2px solid #fff; cursor: pointer;
+  }
+
+  /* Viewer */
+  .viewer {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    background: var(--viewer-bg); overflow: hidden; position: relative;
+    min-height: 0;
+  }
+  .viewer img {
+    display: block; object-fit: contain;
+    transition: transform 0.1s ease;
+    cursor: grab;
+    max-width: 100%; max-height: 100%;
+  }
+  .viewer img.zoomed { max-width: none; max-height: none; }
+  .viewer img:active { cursor: grabbing; }
+
+  /* Empty state */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 20px; color: #666; user-select: none;
+  }
+  .empty-state svg { opacity: 0.3; stroke: #888; fill: none; stroke-width: 1; }
+  .empty-title { font-size: 20px; color: #777; }
+  .empty-hint { font-size: 13px; color: #555; text-align: center; line-height: 1.8; }
+  .empty-hint kbd {
+    display: inline-block; padding: 1px 7px;
+    background: #2d2d2d; border: 1px solid #444; border-radius: 3px;
+    font-size: 11px; font-family: inherit; color: #aaa;
+  }
+  .empty-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 20px; background: var(--accent); color: #fff;
+    border: none; border-radius: 4px; cursor: pointer; font-size: 13px;
+    font-family: inherit; margin-top: 8px;
+  }
+  .empty-btn:hover { background: var(--accent-hover); }
+  .empty-btn svg { opacity: 0.8; stroke: #fff; fill: none; stroke-width: 1.5; }
+  .viewer.drag-over::after {
+    content: ''; position: absolute; inset: 0;
+    background: rgba(0,120,212,0.08);
+    border: 2px dashed var(--accent); pointer-events: none; z-index: 10;
+  }
+
+  /* Status bar */
+  .statusbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 12px; height: 26px; flex-shrink: 0;
+    background: var(--toolbar-bg); border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text-dim);
+  }
+  .statusbar-left, .statusbar-right { display: flex; align-items: center; gap: 16px; }
+  .statusbar-item { display: flex; align-items: center; gap: 4px; }
+
+  /* File input */
+  #fileInput { display: none; }
+  #folderInput { display: none; }
+
+  /* Tooltip */
+  .toolbar-btn[title]:hover::after {
+    content: attr(title); position: absolute; bottom: -28px;
+    left: 50%; transform: translateX(-50%);
+    background: #333; color: #e0e0e0; padding: 3px 8px;
+    border-radius: 3px; font-size: 11px; white-space: nowrap;
+    pointer-events: none; z-index: 100;
+    border: 1px solid #555;
+  }
+
+  /* Error overlay */
+  .error-overlay {
+    display: none; position: absolute; inset: 0;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.7);
+    color: #f48771; font-size: 14px;
+    flex-direction: column; gap: 8px;
+  }
+  .error-overlay.visible { display: flex; }
+  .error-overlay .retry-btn {
+    padding: 6px 16px; background: var(--accent); color: #fff;
+    border: none; border-radius: 3px; cursor: pointer; font-size: 12px;
+    font-family: inherit;
+  }
+  .error-overlay .retry-btn:hover { background: var(--accent-hover); }
+</style>
+</head>
+<body>
+
+<!-- Toolbar -->
+<div class="toolbar" id="toolbar">
+  <div class="toolbar-group">
+    <button class="toolbar-btn-text" id="btnOpen" title="打开图片 (Ctrl+O)">
+      <svg viewBox="0 0 24 24"><path d="M4 20L4 6C4 5.44772 4.44772 5 5 5H10L12 8H19C19.5523 8 20 8.44772 20 9L20 20C20 20.5523 19.5523 21 19 21L5 21C4.44772 21 4 20.5523 4 20Z"/><path d="M4 14L8 11L11 13L15 9L20 13"/></svg>
+      <span>打开</span>
+    </button>
+    <button class="toolbar-btn-text" id="btnOpenFolder" title="打开文件夹">
+      <svg viewBox="0 0 24 24"><path d="M3 7V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V11C21 9.89543 20.1046 9 19 9H12L10 6H5C3.89543 6 3 6.89543 3 8V7Z"/><path d="M21 13H3"/><path d="M8 21V17"/></svg>
+      <span>文件夹</span>
+    </button>
+  </div>
+
+  <div class="toolbar-sep"></div>
+
+  <div class="toolbar-group">
+    <button class="toolbar-btn disabled" id="btnPrev" title="上一张 (← / PageUp)">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="toolbar-label" id="counterText">- / -</span>
+    <button class="toolbar-btn disabled" id="btnNext" title="下一张 (→ / PageDown)">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+
+  <div class="toolbar-sep"></div>
+
+  <div class="toolbar-group">
+    <button class="toolbar-btn disabled" id="btnZoomOut" title="缩小 (Ctrl+- / 滚轮向下)">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/><path d="M16 16L21 21"/></svg>
+    </button>
+    <button class="toolbar-btn disabled" id="btnZoomReset" title="100% (Ctrl+0)">
+      <span style="font-size:12px;font-weight:500" id="zoomText">100%</span>
+    </button>
+    <input type="range" class="zoom-slider disabled" id="zoomSlider" min="5" max="400" value="100" disabled>
+    <button class="toolbar-btn disabled" id="btnZoomIn" title="放大 (Ctrl+= / 滚轮向上)">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/><path d="M16.5 16.5L21 21"/></svg>
+    </button>
+  </div>
+
+  <div class="toolbar-sep"></div>
+
+  <div class="toolbar-group">
+    <button class="toolbar-btn disabled" id="btnFit" title="适应窗口 (Ctrl+F)">
+      <svg viewBox="0 0 24 24"><path d="M3 8V4H7"/><path d="M17 4H21V8"/><path d="M21 16V20H17"/><path d="M7 20H3V16"/><path d="M8 12H16"/><path d="M12 8V16"/></svg>
+    </button>
+    <button class="toolbar-btn disabled" id="btnActual" title="实际大小 (Ctrl+0)">
+      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9H15V15H9Z"/></svg>
+    </button>
+    <button class="toolbar-btn" id="btnRotate" title="旋转 (Ctrl+R)">
+      <svg viewBox="0 0 24 24"><path d="M1 12C1 5.5 5.5 1 12 1C18.5 1 23 5.5 23 12"/><polyline points="23 4 23 12 15 12"/></svg>
+    </button>
+  </div>
+
+  <div class="toolbar-filename" id="filenameText"></div>
+
+  <div class="toolbar-group">
+    <button class="toolbar-btn" id="btnTrash" title="删除图片 (Delete)" style="display:none">
+      <svg viewBox="0 0 24 24"><path d="M3 6H21"/><path d="M8 6V4C8 3.44772 8.44772 3 9 3H15C15.5523 3 16 3.44772 16 4V6"/><path d="M19 6V20C19 20.5523 18.5523 21 18 21H6C5.44772 21 5 20.5523 5 20V6"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Viewer -->
+<div class="viewer" id="viewer">
+  <div class="empty-state" id="emptyState">
+    <svg width="80" height="80" viewBox="0 0 48 48" stroke="currentColor" stroke-width="2">
+      <rect x="6" y="6" width="36" height="36" rx="3"/>
+      <circle cx="18" cy="18" r="4"/>
+      <path d="M6 34L16 26L22 32L30 22L42 34" stroke-linejoin="round"/>
+    </svg>
+    <div class="empty-title">图片查看器</div>
+    <div class="empty-hint">
+      按 <kbd>Ctrl+O</kbd> 打开图片文件，<br>
+      或将图片/文件夹拖入此窗口
+    </div>
+    <button class="empty-btn" id="emptyOpenBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 20L4 6C4 5.44772 4.44772 5 5 5H10L12 8H19C19.5523 8 20 8.44772 20 9L20 20C20 20.5523 19.5523 21 19 21L5 21C4.44772 21 4 20.5523 4 20Z"/><path d="M4 14L8 11L11 13L15 9L20 13"/></svg>
+      打开图片
+    </button>
+  </div>
+  <div class="error-overlay" id="errorOverlay">
+    <span id="errorText">无法加载图片</span>
+    <button class="retry-btn" id="retryBtn">重试</button>
+  </div>
+</div>
+
+<!-- Status bar -->
+<div class="statusbar" id="statusbar">
+  <div class="statusbar-left">
+    <span class="statusbar-item" id="statusDimensions"></span>
+    <span class="statusbar-item" id="statusFileSize"></span>
+  </div>
+  <div class="statusbar-right">
+    <span class="statusbar-item" id="statusFileName">图片查看器</span>
+  </div>
+</div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="fileInput" accept="image/*" multiple>
+<input type="file" id="folderInput" webkitdirectory>
+
+<script src="/desktop-fs.js"></script>
+<script>
+(function(){
+'use strict';
+
+// ──── State ────
+var state = {
+  images: [],          // Array of { file: File, name: string, url: string, loaded: boolean }
+  currentIndex: -1,
+  zoom: 100,
+  minZoom: 5,
+  maxZoom: 400,
+  rotation: 0,
+  fitMode: true,       // true = fit to window
+  panning: false,
+  panStartX: 0,
+  panStartY: 0,
+  panOffsetX: 0,
+  panOffsetY: 0,
+  hasImages: false
+};
+
+// ──── DOM refs ────
+var $ = function(id) { return document.getElementById(id); };
+var viewer = $('viewer');
+var emptyState = $('emptyState');
+var errorOverlay = $('errorOverlay');
+var errorText = $('errorText');
+var imgEl = null;
+var counterText = $('counterText');
+var filenameText = $('filenameText');
+var zoomText = $('zoomText');
+var zoomSlider = $('zoomSlider');
+var statusDimensions = $('statusDimensions');
+var statusFileSize = $('statusFileSize');
+var statusFileName = $('statusFileName');
+var fileInput = $('fileInput');
+var folderInput = $('folderInput');
+
+// Buttons
+var btnOpen = $('btnOpen');
+var btnOpenFolder = $('btnOpenFolder');
+var btnPrev = $('btnPrev');
+var btnNext = $('btnNext');
+var btnZoomIn = $('btnZoomIn');
+var btnZoomOut = $('btnZoomOut');
+var btnZoomReset = $('btnZoomReset');
+var btnFit = $('btnFit');
+var btnActual = $('btnActual');
+var btnRotate = $('btnRotate');
+var emptyOpenBtn = $('emptyOpenBtn');
+var retryBtn = $('retryBtn');
+
+// ──── Utilities ────
+function fmtSize(bytes) {
+  if (!bytes || bytes === 0) return '';
+  var units = ['B', 'KB', 'MB', 'GB'];
+  var i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  return (bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
+}
+
+function extname(name) {
+  var idx = name.lastIndexOf('.');
+  return idx >= 0 ? name.substring(idx + 1).toLowerCase() : '';
+}
+
+var IMAGE_EXTS = ['jpg','jpeg','png','gif','bmp','webp','svg','ico','tiff','tif','avif','heic','heif','jfif','pjpeg','pjp'];
+
+function isImageFile(name) {
+  return IMAGE_EXTS.indexOf(extname(name)) !== -1;
+}
+
+function clamp(v, min, max) {
+  return Math.min(Math.max(v, min), max);
+}
+
+function removeImage(img) {
+  if (img.url && img.url.startsWith('blob:')) {
+    URL.revokeObjectURL(img.url);
+  }
+}
+
+// ──── Image Loading ────
+
+function loadFiles(files) {
+  var images = [];
+  for (var i = 0; i < files.length; i++) {
+    var f = files[i];
+    if (isImageFile(f.name)) {
+      images.push({
+        file: f,
+        name: f.name,
+        url: URL.createObjectURL(f),
+        loaded: false
+      });
+    }
+  }
+  if (images.length === 0) {
+    showError('未找到支持的图片文件');
+    return;
+  }
+  // Clean up previous images
+  for (var j = 0; j < state.images.length; j++) {
+    removeImage(state.images[j]);
+  }
+  state.images = images;
+  state.currentIndex = 0;
+  state.hasImages = true;
+  state.rotation = 0;
+  showImage(0);
+}
+
+function showImage(index) {
+  if (index < 0 || index >= state.images.length) return;
+  state.currentIndex = index;
+  var img = state.images[index];
+
+  // Update counter
+  counterText.textContent = (index + 1) + ' / ' + state.images.length;
+  filenameText.textContent = img.name;
+  statusFileName.textContent = img.name;
+
+  // Enable/disable nav buttons
+  btnPrev.classList.toggle('disabled', index <= 0);
+  btnNext.classList.toggle('disabled', index >= state.images.length - 1);
+  btnPrev.title = index <= 0 ? '' : '上一张 (← / PageUp)';
+  btnNext.title = index >= state.images.length - 1 ? '' : '下一张 (→ / PageDown)';
+
+  // Create or update img element
+  if (!imgEl) {
+    imgEl = new Image();
+    imgEl.style.cssText = 'display:block;object-fit:contain;cursor:grab;max-width:100%;max-height:100%;';
+    viewer.appendChild(imgEl);
+    // Events
+    imgEl.addEventListener('load', onImageLoad);
+    imgEl.addEventListener('error', onImageError);
+    imgEl.addEventListener('mousedown', startPan);
+  }
+
+  hideError();
+  emptyState.style.display = 'none';
+  imgEl.style.display = 'block';
+
+  // Get URL and load
+  var url = img.url;
+  if (imgEl.src !== url) {
+    imgEl.src = url;
+  } else {
+    // Same source, just reset view
+    resetView();
+  }
+
+  // Enable zoom controls
+  enableZoomControls(true);
+
+  // Update status info
+  var file = img.file;
+  if (file) {
+    statusFileSize.textContent = fmtSize(file.size);
+  } else {
+    statusFileSize.textContent = '';
+  }
+
+  // Show delete button
+  $('btnTrash').style.display = '';
+}
+
+function resetView() {
+  state.fitMode = true;
+  state.zoom = 100;
+  state.rotation = 0;
+  state.panOffsetX = 0;
+  state.panOffsetY = 0;
+  applyTransform();
+  updateZoomUI();
+}
+
+function onImageLoad() {
+  state.images[state.currentIndex].loaded = true;
+  hideError();
+  resetView();
+  // Show dimensions
+  statusDimensions.textContent = this.naturalWidth + ' × ' + this.naturalHeight;
+}
+
+function onImageError() {
+  showError('无法加载图片: ' + state.images[state.currentIndex].name);
+}
+
+// ──── Zoom & Transform ────
+
+function applyTransform() {
+  if (!imgEl) return;
+
+  var scale = state.zoom / 100;
+  var transform = 'translate(' + state.panOffsetX + 'px, ' + state.panOffsetY + 'px) scale(' + scale + ')';
+
+  if (state.rotation !== 0) {
+    transform += ' rotate(' + state.rotation + 'deg)';
+  }
+
+  imgEl.style.transform = transform;
+
+  if (state.fitMode && state.zoom === 100) {
+    imgEl.style.objectFit = 'contain';
+    imgEl.style.maxWidth = '100%';
+    imgEl.style.maxHeight = '100%';
+    imgEl.classList.remove('zoomed');
+  } else {
+    imgEl.style.objectFit = 'none';
+    imgEl.style.maxWidth = 'none';
+    imgEl.style.maxHeight = 'none';
+    imgEl.classList.add('zoomed');
+  }
+}
+
+function updateZoomUI() {
+  zoomText.textContent = Math.round(state.zoom) + '%';
+  zoomSlider.value = state.zoom;
+}
+
+function setZoom(val, centerOnCursor) {
+  var old = state.zoom;
+  state.zoom = clamp(val, state.minZoom, state.maxZoom);
+  state.fitMode = false;
+
+  if (centerOnCursor) {
+    // Adjust pan to zoom towards cursor position - simplified version
+    var ratio = state.zoom / old;
+    state.panOffsetX *= ratio;
+    state.panOffsetY *= ratio;
+  }
+
+  applyTransform();
+  updateZoomUI();
+}
+
+function zoomIn() {
+  var step = state.zoom < 50 ? 5 : state.zoom < 100 ? 10 : 25;
+  setZoom(state.zoom + step);
+}
+
+function zoomOut() {
+  var step = state.zoom <= 50 ? 5 : state.zoom <= 100 ? 10 : 25;
+  setZoom(state.zoom - step);
+}
+
+function fitToWindow() {
+  state.fitMode = true;
+  state.zoom = 100;
+  state.panOffsetX = 0;
+  state.panOffsetY = 0;
+  applyTransform();
+  updateZoomUI();
+}
+
+function actualSize() {
+  state.fitMode = false;
+  state.zoom = 100;
+  state.panOffsetX = 0;
+  state.panOffsetY = 0;
+  applyTransform();
+  updateZoomUI();
+}
+
+function rotateImage() {
+  state.rotation = (state.rotation + 90) % 360;
+  applyTransform();
+}
+
+function enableZoomControls(enabled) {
+  var els = [btnZoomIn, btnZoomOut, btnZoomReset, btnFit, btnActual, zoomSlider];
+  els.forEach(function(el) {
+    if (enabled) {
+      el.classList.remove('disabled');
+      el.disabled = false;
+    } else {
+      el.classList.add('disabled');
+      el.disabled = true;
+    }
+  });
+}
+
+// ──── Pan ────
+
+function startPan(e) {
+  if (state.fitMode && state.zoom === 100) return;
+  if (e.button !== 0) return;
+  state.panning = true;
+  state.panStartX = e.clientX - state.panOffsetX;
+  state.panStartY = e.clientY - state.panOffsetY;
+  imgEl.style.cursor = 'grabbing';
+  e.preventDefault();
+}
+
+document.addEventListener('mousemove', function(e) {
+  if (!state.panning || !imgEl) return;
+  state.panOffsetX = e.clientX - state.panStartX;
+  state.panOffsetY = e.clientY - state.panStartY;
+  applyTransform();
+});
+
+document.addEventListener('mouseup', function() {
+  if (state.panning) {
+    state.panning = false;
+    if (imgEl) imgEl.style.cursor = 'grab';
+  }
+});
+
+// ──── Wheel Zoom ────
+
+viewer.addEventListener('wheel', function(e) {
+  if (!state.hasImages) return;
+  e.preventDefault();
+  if (e.deltaY < 0) {
+    zoomIn();
+  } else {
+    zoomOut();
+  }
+}, { passive: false });
+
+// ──── Error ────
+
+function showError(msg) {
+  errorText.textContent = msg;
+  errorOverlay.classList.add('visible');
+}
+
+function hideError() {
+  errorOverlay.classList.remove('visible');
+}
+
+// ──── Navigation ────
+
+function prevImage() {
+  if (state.currentIndex > 0) {
+    showImage(state.currentIndex - 1);
+  }
+}
+
+function nextImage() {
+  if (state.currentIndex < state.images.length - 1) {
+    showImage(state.currentIndex + 1);
+  }
+}
+
+// ──── Drag & Drop ────
+viewer.addEventListener('dragover', function(e) {
+  e.preventDefault();
+  viewer.classList.add('drag-over');
+});
+viewer.addEventListener('dragleave', function(e) {
+  e.preventDefault();
+  viewer.classList.remove('drag-over');
+});
+viewer.addEventListener('drop', function(e) {
+  e.preventDefault();
+  viewer.classList.remove('drag-over');
+  hideError();
+
+  var items = e.dataTransfer.items;
+  var files = [];
+  var pending = 0;
+
+  if (items && items.length > 0) {
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i].webkitGetAsEntry ? items[i].webkitGetAsEntry() : null;
+      if (item) {
+        pending++;
+        traverseEntry(item, function(entryFiles) {
+          files = files.concat(entryFiles);
+          pending--;
+          if (pending === 0 && files.length > 0) {
+            loadFiles(files);
+          } else if (pending === 0) {
+            showError('未找到支持的图片文件');
+          }
+        });
+      } else {
+        // Fallback
+        var f = e.dataTransfer.files[i];
+        if (f && isImageFile(f.name)) files.push(f);
+      }
+    }
+    // If no WebKit entries, load directly
+    if (pending === 0 && files.length > 0) {
+      loadFiles(files);
+    } else if (pending === 0) {
+      // Check regular files
+      var regFiles = [];
+      for (var j = 0; j < e.dataTransfer.files.length; j++) {
+        if (isImageFile(e.dataTransfer.files[j].name)) {
+          regFiles.push(e.dataTransfer.files[j]);
+        }
+      }
+      if (regFiles.length > 0) loadFiles(regFiles);
+    }
+  } else {
+    // Fallback for basic file list
+    var fallbackFiles = [];
+    for (var k = 0; k < e.dataTransfer.files.length; k++) {
+      if (isImageFile(e.dataTransfer.files[k].name)) {
+        fallbackFiles.push(e.dataTransfer.files[k]);
+      }
+    }
+    if (fallbackFiles.length > 0) {
+      loadFiles(fallbackFiles);
+    } else {
+      showError('未找到支持的图片文件');
+    }
+  }
+});
+
+// Entry traversal for folder drop
+function traverseEntry(entry, callback) {
+  var results = [];
+  var pending = 1;
+
+  function process(entry) {
+    if (entry.isFile) {
+      entry.file(function(file) {
+        if (isImageFile(file.name)) results.push(file);
+        pending--;
+        if (pending === 0) callback(results);
+      });
+    } else if (entry.isDirectory) {
+      var dirReader = entry.createReader();
+      var readEntries = function() {
+        dirReader.readEntries(function(entries) {
+          if (entries.length === 0) {
+            pending--;
+            if (pending === 0) callback(results);
+            return;
+          }
+          for (var i = 0; i < entries.length; i++) {
+            pending++;
+            process(entries[i]);
+          }
+          readEntries(); // Continue reading (for large dirs)
+        });
+      };
+      readEntries();
+    }
+  }
+  process(entry);
+}
+
+// ──── File inputs ────
+
+fileInput.addEventListener('change', function(e) {
+  var files = e.target.files;
+  if (files && files.length > 0) {
+    loadFiles(files);
+  }
+  fileInput.value = '';
+});
+
+folderInput.addEventListener('change', function(e) {
+  var files = e.target.files;
+  if (files && files.length > 0) {
+    loadFiles(files);
+  }
+  folderInput.value = '';
+});
+
+// ──── Button handlers ────
+
+btnOpen.addEventListener('click', function() { fileInput.click(); });
+emptyOpenBtn.addEventListener('click', function() { fileInput.click(); });
+btnOpenFolder.addEventListener('click', function() { folderInput.click(); });
+btnPrev.addEventListener('click', prevImage);
+btnNext.addEventListener('click', nextImage);
+btnZoomIn.addEventListener('click', zoomIn);
+btnZoomOut.addEventListener('click', zoomOut);
+btnZoomReset.addEventListener('click', actualSize);
+btnFit.addEventListener('click', fitToWindow);
+btnActual.addEventListener('click', actualSize);
+btnRotate.addEventListener('click', rotateImage);
+retryBtn.addEventListener('click', function() {
+  if (state.currentIndex >= 0) {
+    showImage(state.currentIndex);
+  }
+});
+
+function deleteCurrentImage() {
+  if (state.currentIndex < 0 || state.currentIndex >= state.images.length) return;
+  var img = state.images[state.currentIndex];
+  var delPath = img._originalPath || '';
+  state.images.splice(state.currentIndex, 1);
+  if (state.images.length === 0) {
+    state.hasImages = false;
+    enableZoomControls(false);
+    document.getElementById('btnTrash').style.display = 'none';
+    if (imgEl) { imgEl.style.display = 'none'; }
+    emptyState.style.display = '';
+    counterText.textContent = '- / -';
+    filenameText.textContent = '';
+  } else {
+    var newIdx = Math.min(state.currentIndex, state.images.length - 1);
+    showImage(newIdx);
+  }
+  // Delete from IndexedDB directly via DesktopFS
+  if (delPath) {
+    console.log('[ImageViewer] Deleting file via parent:', delPath);
+    window.parent.postMessage({ type: 'app-delete-file', filePath: delPath }, '*');
+  }
+}
+document.getElementById('btnTrash').addEventListener('click', deleteCurrentImage);
+
+// Zoom slider
+zoomSlider.addEventListener('input', function() {
+  if (!state.hasImages) return;
+  state.fitMode = false;
+  state.zoom = parseFloat(this.value);
+  applyTransform();
+  updateZoomUI();
+});
+
+// ──── Keyboard shortcuts ────
+document.addEventListener('keydown', function(e) {
+  if (!state.hasImages) return;
+
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+    e.preventDefault(); prevImage();
+  } else if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+    e.preventDefault(); nextImage();
+  } else if (e.key === 'Home') {
+    e.preventDefault(); if (state.images.length > 0) showImage(0);
+  } else if (e.key === 'End') {
+    e.preventDefault(); if (state.images.length > 0) showImage(state.images.length - 1);
+  } else if (e.key === 'Escape') {
+    e.preventDefault(); fitToWindow();
+  } else if (e.ctrlKey && (e.key === '=' || e.key === '+')) {
+    e.preventDefault(); zoomIn();
+  } else if (e.ctrlKey && e.key === '-') {
+    e.preventDefault(); zoomOut();
+  } else if (e.ctrlKey && e.key === '0') {
+    e.preventDefault(); actualSize();
+  } else if (e.ctrlKey && (e.key === 'f' || e.key === 'F')) {
+    e.preventDefault(); fitToWindow();
+  } else if (e.ctrlKey && (e.key === 'o' || e.key === 'O')) {
+    e.preventDefault(); fileInput.click();
+  } else if (e.ctrlKey && (e.key === 'r' || e.key === 'R')) {
+    e.preventDefault(); rotateImage();
+  } else if (e.key === 'Delete') {
+    e.preventDefault(); deleteCurrentImage();
+  }
+});
+
+// Open folder with Ctrl+Shift+O
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey && e.shiftKey && (e.key === 'o' || e.key === 'O')) {
+    e.preventDefault(); folderInput.click();
+  }
+});
+
+// ──── Click to Focus ────
+document.addEventListener('mousedown', function() {
+  try { window.parent.postMessage({ type: 'app-focus' }, '*'); } catch(e) {}
+});
+
+// ──── Init ────
+enableZoomControls(false);
+// Load file via postMessage from parent
+var _pendingFilePath = null;
+var _fileLoaded = false;
+
+function requestFileFromParent(filePath) {
+  if (!filePath || _fileLoaded) return;
+  _pendingFilePath = filePath;
+  console.log('[ImageViewer] requesting file from parent:', filePath);
+  window.parent.postMessage({ type: 'app-request-file', filePath: filePath }, '*');
+}
+
+// Listen for postMessage file data from parent
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'app-file-data' && e.data.content) {
+    var dataUrl = e.data.content;
+    var fname = (e.data.filePath || _pendingFilePath || '').split('/').pop() || 'image';
+    console.log('[ImageViewer] received file data:', fname, 'length:', dataUrl.length);
+    _fileLoaded = true;
+    state.images.push({
+      file: null, name: fname, url: dataUrl, loaded: false,
+      _originalPath: e.data.filePath || _pendingFilePath || ''
+    });
+    state.hasImages = true;
+    state.currentIndex = 0;
+    state.rotation = 0;
+    showImage(0);
+  }
+});
+
+// Init: load file from URL params
+(function init() {
+  var params = new URLSearchParams(window.location.search);
+  var filePath = params.get('filePath');
+  console.log('[ImageViewer] URL params:', { filePath: filePath });
+
+  if (filePath) {
+    var fname = filePath.split('/').pop();
+    document.querySelector('.empty-title').textContent = fname;
+    document.querySelector('.empty-hint').innerHTML = 'Loading...';
+    // Retry multiple times in case parent message listener not ready yet
+    var retryCount = 0;
+    function tryRequest() {
+      if (_fileLoaded) return;
+      requestFileFromParent(filePath);
+      retryCount++;
+      if (retryCount < 10) {
+        setTimeout(tryRequest, 1000);
+      } else {
+        document.querySelector('.empty-hint').innerHTML = 'Failed to load image. Use Ctrl+O to open or drag here.';
+      }
+    }
+    tryRequest();
+  }
+})();
+
+console.log('[ImageViewer] Image viewer started');
+})();
+</script>
+</body>
+</html>
