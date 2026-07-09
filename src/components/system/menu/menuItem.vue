@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref,reactive,computed,watch,watchEffect,onMounted,nextTick} from "vue";
 import menuItem from "./menuItem.vue";
 import {bus} from "@/App"
@@ -134,16 +134,25 @@ function hander(fun){
 }
 
 .icon{
-	width: 1em;
-	height: 1em;
-	line-height: 1em;
+	width: 16px;
+	height: 16px;
 	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
+}
+.icon svg {
+	width: 100%;
+	height: 100%;
+	display: block;
 }
 
 .bg{
 	padding: 0.2em 0.8em !important;
 	min-height: 24px;
 	gap: 6px;
+}
 
 .separator-line{
 	height: 1px;
@@ -153,5 +162,5 @@ function hander(fun){
 .no-icon{
 	width: 1em;
 	flex-shrink: 0;
-}}
+}
 </style>

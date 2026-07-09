@@ -972,6 +972,33 @@ async function showMenu(e,i){
 
 		menuDatas.value.push(...menuData)
 
+		const shortcutIdx = menuDatas.value.findIndex(i => i.title === "系统设置")
+		if (shortcutIdx > -1) {
+			const allApps = getAllApps().filter(a => !a.hidden)
+			if (allApps.length > 0) {
+				const shortcutChildren = allApps.map(app => ({
+					title: app.name,
+					icon: app.icon,
+					hander: () => {
+						const shortcut = new WebDir(config.desktop.path, app.name)
+						shortcut.uid = app.id + '-shortcut'
+						shortcut.icon = app.icon
+						shortcut._appId = app.id
+						shortcut.nickname = app.name
+						shortcut.save().then(() => {
+							system.initList(config.desktop.path).then(() => initAppList())
+						})
+						bus.emit('menu-close')
+					}
+				}))
+				menuDatas.value.splice(shortcutIdx, 0, {
+					title: '新建快捷方式',
+					icon: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 4L6 14V34L24 44L42 34V14L24 4Z" fill="none" stroke="#333" stroke-width="4" stroke-linejoin="round"/><path d="M24 44V24" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 14L24 24L42 14" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+					children: shortcutChildren
+				})
+			}
+		}
+
 
 		console.log(`selectList.value:`,selectList.value);
 
@@ -1131,7 +1158,6 @@ const menuData=[
 	},
 
 
-	{ type: 'separator' },
 
 
 	{

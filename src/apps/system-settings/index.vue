@@ -127,12 +127,26 @@ function solidColorDataUrl(color) {
   return 'data:image/svg+xml,' + encodeURIComponent(svg)
 }
 
+function gradientDataUrl(stops) {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">' + stops + '</linearGradient></defs><rect width="1920" height="1080" fill="url(#g)"/></svg>'
+  return 'data:image/svg+xml,' + encodeURIComponent(svg)
+}
+
 const presetWallpapers = [
   // bg/ 文件夹中的图片壁纸
   { name: '黑色', url: '/bg/black.png' },
   { name: '蓝色', url: '/bg/blue.png' },
   { name: '粉色', url: '/bg/pink.png' },
   { name: '紫色', url: '/bg/purple.png' },
+
+  // 渐变壁纸
+  { name: '蓝紫渐变', url: gradientDataUrl('<stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#764ba2"/>') },
+  { name: '日落渐变', url: gradientDataUrl('<stop offset="0%" stop-color="#f093fb"/><stop offset="100%" stop-color="#f5576c"/>') },
+  { name: '森林渐变', url: gradientDataUrl('<stop offset="0%" stop-color="#11998e"/><stop offset="100%" stop-color="#38ef7d"/>') },
+  { name: '太空渐变', url: gradientDataUrl('<stop offset="0%" stop-color="#0f0c29"/><stop offset="50%" stop-color="#302b63"/><stop offset="100%" stop-color="#24243e"/>') },
+  { name: '海洋渐变', url: gradientDataUrl('<stop offset="0%" stop-color="#00b4db"/><stop offset="100%" stop-color="#0083b0"/>') },
+  { name: '暖阳渐变', url: gradientDataUrl('<stop offset="0%" stop-color="#f83600"/><stop offset="100%" stop-color="#f9d423"/>') },
+  { name: '清新渐变', url: gradientDataUrl('<stop offset="0%" stop-color="#a8edea"/><stop offset="100%" stop-color="#fed6e3"/>') },
 
   // 纯色壁纸
   { name: '纯黑', url: '', color: '#000000' },
