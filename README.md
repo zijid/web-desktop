@@ -17,10 +17,10 @@
 
 ## 开发
 
-`ash
+```bash
 npm install
 npm run dev
-`
+```
 
 ## 构建
 
