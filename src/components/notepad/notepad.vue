@@ -46,6 +46,8 @@ const size = reactive({ w:55, h:60 })
 const isFocused = ref(false)
 
 const content = ref('')
+const isLargeFile = ref(false)
+const MAX_LINE_NUM = 5000
 const fileUrl = ref('')
 const lineCount = ref(1)
 const statusText = ref('就绪')
@@ -229,16 +231,34 @@ function onDragEnd() {
 }
 
 function updateLC() {
-  lineCount.value = (content.value.match(/\n/g) || []).length + 1
+  const len = content.value.length
+  isLargeFile.value = len > 500000
+  let count = 1
+  let i = 0
+  while (i < len) {
+    const idx = content.value.indexOf('\n', i)
+    if (idx === -1) break
+    count++
+    i = idx + 1
+  }
+  lineCount.value = count
 }
 
 function updateCur() {
   if (!taRef.value) return
+  if (isLargeFile.value) return
   const ta = taRef.value
   const t = content.value
   const p = ta.selectionStart
   const b = t.substring(0, p)
-  const l = (b.match(/\n/g) || []).length + 1
+  let l = 1
+  let i = 0
+  while (i < p) {
+    const idx = t.indexOf('\n', i)
+    if (idx === -1 || idx >= p) break
+    l++
+    i = idx + 1
+  }
   const n = b.lastIndexOf('\n')
   const c = n >= 0 ? p - n : p + 1
   cursorPos.value = { line: l, col: c }
@@ -257,6 +277,7 @@ async function loadFile(path) {
     } else {
       fileObj.value = f
       content.value = typeof f.content === 'string' ? f.content : String(f.content || '')
+      if (content.value.length > 500000) { isLargeFile.value = true; showLines.value = false }
       statusText.value = '已加载'; isModified.value = false
     }
     updateLC()
@@ -324,7 +345,7 @@ function newFile() {
 }
 
 function handleInput() {
-  updateLC(); updateCur()
+  if (!isLargeFile.value) { updateLC(); updateCur() }
   if (!isModified.value) { isModified.value = true; statusText.value = '已修改' }
   if (autoSave.value && currentPath.value) {
     if (autoSaveTimer.value) clearTimeout(autoSaveTimer.value)
@@ -443,8 +464,11 @@ function showTextContextMenu(e) {
     </div>
 
     <div class="npbody">
-      <div class="np-ln" v-if="showLines" @scroll="onScroll">
-        <div v-for="n in lineCount" :key="n" class="npln" :class="{ cur: n === cursorPos.line }">{{ n }}</div>
+      <div class="np-ln" v-if="showLines && !isLargeFile" @scroll="onScroll">
+        <div v-for="n in Math.min(lineCount, MAX_LINE_NUM)" :key="n" class="npln" :class="{ cur: n === cursorPos.line }">{{ n }}</div>
+      </div>
+      <div class="np-ln np-ln-large" v-if="showLines && isLargeFile" title="文件过大，已禁用行号显示">
+        <div class="npln npln-large">...</div>
       </div>
       <textarea ref="taRef" class="npta" v-model="content" @contextmenu.stop.prevent="showTextContextMenu($event)"
         @input="handleInput" @keydown="handleKeydown"
@@ -633,4 +657,21 @@ function showTextContextMenu(e) {
 .saw-name-edit:focus { border-color: #0078d4; }
 .saw-name-edit:empty:before { content: attr(data-placeholder); color: #bbb; }
 .saw-fr { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* Large file indicator */
+.np-ln-large {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  color: #999;
+  font-size: 11px;
+  cursor: help;
+}
+.npln-large {
+  color: #999 !important;
+  font-size: 18px !important;
+  font-weight: bold !important;
+  padding: 0 !important;
+}
 </style>

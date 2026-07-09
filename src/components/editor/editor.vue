@@ -1,6 +1,6 @@
-<script setup>
+﻿<script setup>
 /**
- * 代码编辑器 - 查看和编辑源代码
+ * 代码编辑器- 查看和编辑源代码
  */
 import { ref, onMounted, nextTick } from 'vue'
 const taRef = ref(null)
@@ -20,6 +20,7 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const code = ref('')
+const isLargeFile = ref(false)
 const fileUrl = ref('')
 const lineCount = ref(1)
 const statusText = ref('准备就绪')
@@ -27,7 +28,17 @@ const isModified = ref(false)
 const showGutter = ref(true)
 
 function updateLineCount() {
-  lineCount.value = (code.value.match(/\n/g) || []).length + 1
+  const len = code.value.length
+  isLargeFile.value = len > 500000
+  let count = 1
+  let i = 0
+  while (i < len) {
+    const idx = code.value.indexOf('\n', i)
+    if (idx === -1) break
+    count++
+    i = idx + 1
+  }
+  lineCount.value = count
 }
 
 function loadFile(url) {
@@ -36,7 +47,7 @@ function loadFile(url) {
     realUrl = realUrl.replace(/^view-source:/, '')
   }
   fileUrl.value = realUrl
-  statusText.value = '加载中...'
+  statusText.value = '鍔犺浇涓?..'
 
   if (realUrl.startsWith('/')) {
     readFile(realUrl).then(file => {
@@ -53,6 +64,7 @@ function loadFile(url) {
           }
         }
         code.value = text
+            if (code.value.length > 500000) { isLargeFile.value = true; showGutter.value = false }
         updateLineCount()
         statusText.value = '已加载'
       } else {
@@ -161,8 +173,11 @@ function showTextContextMenu(e) {
       <span class="editor-status" :class="{ modified: isModified }">{{ statusText }}</span>
     </div>
     <div class="editor-body">
-      <div class="line-numbers" v-if="showGutter">
-        <div v-for="n in lineCount" :key="n" class="line-num">{{ n }}</div>
+      <div class="line-numbers" v-if="showGutter && !isLargeFile">
+        <div v-for="n in Math.min(lineCount, 5000)" :key="n" class="line-num">{{ n }}</div>
+      </div>
+      <div class="line-numbers line-nums-large" v-if="showGutter && isLargeFile" title="文件过大，已禁用行号显示">
+        <div class="line-num">...</div>
       </div>
       <textarea
         ref="taRef"
@@ -233,6 +248,16 @@ function showTextContextMenu(e) {
   min-width: 40px;
   border-right: 1px solid #3c3c3c;
 }
+.line-nums-large {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: help;
+  min-width: 42px;
+}
 .line-num {
   padding: 0 8px;
   color: #858585;
@@ -260,3 +285,4 @@ function showTextContextMenu(e) {
   color: #555;
 }
 </style>
+

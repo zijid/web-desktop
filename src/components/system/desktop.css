@@ -32,7 +32,7 @@
 	bottom: 0;
 	display: flex;
 	flex-direction: row;
-	z-index: 9;
+	z-index: 99999;
 	overflow-x: auto;
 	overflow-y: hidden;
 	padding-right: 10px;
@@ -230,7 +230,7 @@
     box-shadow: 2px -2px 8px rgba(0,0,0,0.2);
     display: flex;
     flex-direction: column;
-    z-index: 100;
+    z-index: 999999;
     pointer-events: auto;
 }
 .startHeader{

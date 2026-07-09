@@ -142,6 +142,11 @@ const presetWallpapers = [
   { name: '海洋渐变', gradient: 'linear-gradient(135deg, #00b4db, #0083b0)' },
   { name: '暖阳渐变', gradient: 'linear-gradient(135deg, #f83600, #f9d423)' },
   { name: '清新渐变', gradient: 'linear-gradient(135deg, #a8edea, #fed6e3)' },
+  { name: '极光渐变', gradient: 'linear-gradient(135deg, #00c6ff, #0072ff)' },
+  { name: '霓虹渐变', gradient: 'linear-gradient(135deg, #f12711, #f5af19)' },
+  { name: '深红渐变', gradient: 'linear-gradient(135deg, #cb2d3e, #ef473a)' },
+  { name: '冰雪渐变', gradient: 'linear-gradient(135deg, #83a4d4, #b6fbff)' },
+  { name: '暗夜渐变', gradient: 'linear-gradient(135deg, #141e30, #243b55)' },
 
   // 纯色壁纸
   { name: '纯黑', url: '', color: '#000000' },

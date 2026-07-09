@@ -1,9 +1,6 @@
 ﻿<script setup>
 /**
- * AppFrame 鈥?閫氱敤搴旂敤杩愯瀹瑰櫒
- *
- * 鑷姩閫傞厤涓ょ搴旂敤绫诲瀷锛? *   type='html'    鈫?閫氳繃 iframe 鍔犺浇 url
- *   type='vue'     鈫?鍔ㄦ€佹覆鏌?component
+ * AppFrame - General application runtime container
  */
 import { ref, computed, watch, onMounted, onUnmounted, provide } from 'vue'
 

@@ -215,11 +215,11 @@ const filteredDir = computed(() => {
 
     if (sortColumn.value === "name") {
       // 驱动器排序：C盘优先，其他按字母
-      if (aName.match(/^[A-Z]:/) && bName.match(/^[A-Z]:/)) {
+      if (aName.match(/^[a-z]:/i) && bName.match(/^[a-z]:/i)) {
         return sortAsc.value ? aName.localeCompare(bName) : -aName.localeCompare(bName)
       }
-      if (aName.match(/^[A-Z]:/)) return -1
-      if (bName.match(/^[A-Z]:/)) return 1
+      if (aName.match(/^[a-z]:/i)) return -1
+      if (bName.match(/^[a-z]:/i)) return 1
       return sortAsc.value ? aName.localeCompare(bName, 'zh-CN') : bName.localeCompare(aName, 'zh-CN')
     }
 

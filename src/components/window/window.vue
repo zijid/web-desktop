@@ -137,14 +137,14 @@ onUnmounted(()=>{
 				<div class="max" @click.stop="max(winInfo.pid)">
 					<svg width="15" height="15" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg" data-v-c30228d9="" v-if="windowState.isMax===true">
 						<g data-v-c30228d9="">
-							<title data-v-c30228d9="">��С</title>
+							<title data-v-c30228d9="">��</title>
 							<rect stroke-width="1" id="svg_4" height="6" width="8" y="2" x="2.5" stroke="#000" fill="transparent" data-v-c30228d9=""></rect>
 							<rect stroke-width="1" id="svg_3" height="6" width="8" y="5" x="0.5" stroke="#000" data-v-c30228d9="" fill="#fff"></rect>
 						</g>
 					</svg>
 					<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 12 12" v-if="windowState.isMax===false">
 						<g>
-							<title>�Ŵ�</title>
+							<title>Restore</title>
 							<rect stroke="#000" stroke-width="2" id="svg_4" height="8" width="10" y="2" x="1" fill="none"/>
 						</g>
 					</svg>

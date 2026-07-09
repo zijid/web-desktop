@@ -497,7 +497,7 @@ if (savedMode) bgMode.value = savedMode
 
 	bus.on('wallpaper-change', (url) => { bg.value = url })
 bus.on('wallpaper-mode-change', (mode) => { bgMode.value = mode })
-  bus.on('file-list-changed', (path) => { console.log('[Desktop] file-list-changed:', path); system.initList(path).then(() => { initAppList() }) })
+  
   bus.on('file-list-changed', (path) => { system.initList(path).then(() => { initAppList() }) })
 
 
@@ -956,22 +956,6 @@ async function showMenu(e,i){
 		}
 
 
-			menuDatas.value.push({
-
-
-				title:"属性",
-
-
-				hander:()=>{
-
-
-					alert('文件属性\\n名称: ' + i.name + '\\n路径: ' + i.path + '\\n类型: ' + (i.type||'应用') + '\\n大小: ' + (i.size||'--') + '\\n创建时间: ' + (i.createTime ? new Date(i.createTime).toLocaleString() : '--') )
-
-
-				}
-
-
-			})
 
 
 	}else{
@@ -1040,6 +1024,22 @@ async function showMenu(e,i){
 	
 
 
+		menuDatas.value.push({
+
+
+				title:"属性",
+
+
+				hander:()=>{
+
+
+					alert('文件属性\\n名称: ' + i.name + '\\n路径: ' + i.path + '\\n类型: ' + (i.type||'应用') + '\\n大小: ' + (i.size||'--') + '\\n创建时间: ' + (i.createTime ? new Date(i.createTime).toLocaleString() : '--') )
+
+
+				}
+
+
+			})
 	bus.emit("menu-show",{
 
 
@@ -1929,7 +1929,7 @@ function f(){
 				<template #title>{{ progress.title }}</template>
 
 
-				<AppFrame :app-id="progress.appId" :title="progress.title" :pid="progress.pid" :pwd="progress.pwd" :file-path="progress.filePath || progress.path" :path="progress.path" :args="progress.args" :url="progress.url" ref="app" @close="sysCloseWindow" @focus="(pid) => showWindow(pid, 'window')" />
+				<AppFrame :app-id="progress.appId" :title="progress.title" :pid="progress.pid" :pwd="progress.pwd" :path="progress.path" :args="progress.args" :url="progress.url" ref="app" @close="sysCloseWindow" @focus="(pid) => showWindow(pid, 'window')" />
 
 
 			</Window>
