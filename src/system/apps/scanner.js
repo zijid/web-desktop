@@ -586,6 +586,21 @@ export async function scanAndRegisterApps() {
     })
   }
 
+  if (!getApp('browser')) {
+    registerApp('browser', {
+      name: '浏览器',
+      icon: '<svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4C12.9543 4 4 12.9543 4 24C4 35.0457 12.9543 44 24 44Z" fill="none" stroke="#333" stroke-width="4"/><path d="M4 24H44" stroke="#333" stroke-width="4"/><path d="M24 4C20 4 16 10 16 24C16 38 20 44 24 44C28 44 32 38 32 24C32 10 28 4 24 4Z" fill="none" stroke="#333" stroke-width="4"/><circle cx="24" cy="24" r="4" fill="#333"/></svg>',
+      url: '/apps/browser/index.html',
+      windowWidth: 80,
+      windowHeight: 85,
+      minWidth: 400,
+      minHeight: 300,
+      menu: [
+        { title: '打开', hander: () => launchApp('browser', { title: '浏览器' }) },
+      ]
+    })
+  }
+
   const { rebuildAssociations } = await import('@/system/filetypes')
 
 
