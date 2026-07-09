@@ -127,11 +127,6 @@ function solidColorDataUrl(color) {
   return 'data:image/svg+xml,' + encodeURIComponent(svg)
 }
 
-function gradientDataUrl(stops) {
-  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">' + stops + '</linearGradient></defs><rect width="1920" height="1080" fill="url(#g)"/></svg>'
-  return 'data:image/svg+xml,' + encodeURIComponent(svg)
-}
-
 const presetWallpapers = [
   // bg/ 文件夹中的图片壁纸
   { name: '黑色', url: '/bg/black.png' },
@@ -140,13 +135,13 @@ const presetWallpapers = [
   { name: '紫色', url: '/bg/purple.png' },
 
   // 渐变壁纸
-  { name: '蓝紫渐变', url: gradientDataUrl('<stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#764ba2"/>') },
-  { name: '日落渐变', url: gradientDataUrl('<stop offset="0%" stop-color="#f093fb"/><stop offset="100%" stop-color="#f5576c"/>') },
-  { name: '森林渐变', url: gradientDataUrl('<stop offset="0%" stop-color="#11998e"/><stop offset="100%" stop-color="#38ef7d"/>') },
-  { name: '太空渐变', url: gradientDataUrl('<stop offset="0%" stop-color="#0f0c29"/><stop offset="50%" stop-color="#302b63"/><stop offset="100%" stop-color="#24243e"/>') },
-  { name: '海洋渐变', url: gradientDataUrl('<stop offset="0%" stop-color="#00b4db"/><stop offset="100%" stop-color="#0083b0"/>') },
-  { name: '暖阳渐变', url: gradientDataUrl('<stop offset="0%" stop-color="#f83600"/><stop offset="100%" stop-color="#f9d423"/>') },
-  { name: '清新渐变', url: gradientDataUrl('<stop offset="0%" stop-color="#a8edea"/><stop offset="100%" stop-color="#fed6e3"/>') },
+  { name: '蓝紫渐变', gradient: 'linear-gradient(135deg, #667eea, #764ba2)' },
+  { name: '日落渐变', gradient: 'linear-gradient(135deg, #f093fb, #f5576c)' },
+  { name: '森林渐变', gradient: 'linear-gradient(135deg, #11998e, #38ef7d)' },
+  { name: '太空渐变', gradient: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' },
+  { name: '海洋渐变', gradient: 'linear-gradient(135deg, #00b4db, #0083b0)' },
+  { name: '暖阳渐变', gradient: 'linear-gradient(135deg, #f83600, #f9d423)' },
+  { name: '清新渐变', gradient: 'linear-gradient(135deg, #a8edea, #fed6e3)' },
 
   // 纯色壁纸
   { name: '纯黑', url: '', color: '#000000' },
@@ -205,8 +200,9 @@ function loadDesktopSettings() {
 function isActivePreset(item) {
   const cur = wallpaperUrl.value
   if (!cur) return false
+  if (item.gradient) return cur === 'gradient:' + item.gradient
   if (item.url && cur === item.url) return true
-  if (!item.url) {
+  if (!item.url && item.color) {
     const dataUrl = solidColorDataUrl(item.color)
     if (cur === dataUrl) return true
   }
@@ -214,10 +210,14 @@ function isActivePreset(item) {
 }
 
 function selectPresetWallpaper(item) {
-  if (item.url) {
+  if (item.gradient) {
+    const val = 'gradient:' + item.gradient
+    wallpaperUrl.value = val
+    applyWallpaper(val)
+  } else if (item.url) {
     wallpaperUrl.value = item.url
     applyWallpaper(item.url)
-  } else {
+  } else if (item.color) {
     const dataUrl = solidColorDataUrl(item.color)
     wallpaperUrl.value = dataUrl
     applyWallpaper(dataUrl)
@@ -239,8 +239,13 @@ function onFileImport(e) {
 function applyWallpaper(url) {
   if (!config || !config.desktop) return
   if (!url) { statusMsg.value = '请输入壁纸 URL 或选择预设'; return }
-  if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) {
-    config.desktop.bg = url.startsWith('data:') ? { url: '', base64: url } : { url, base64: '' }
+  const isGradient = url.startsWith('gradient:')
+  if (isGradient || url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) {
+    if (isGradient) {
+      config.desktop.bg = { url: '', base64: url }
+    } else {
+      config.desktop.bg = url.startsWith('data:') ? { url: '', base64: url } : { url, base64: '' }
+    }
     localStorage.setItem('web-desktop-bg', url)
     bus.emit('wallpaper-change', url)
     // 同时保存当前背景模式
@@ -477,8 +482,8 @@ onMounted(() => {
                   class="preset-card"
                   :class="{ active: isActivePreset(item) }"
                   @click="selectPresetWallpaper(item)">
-                  <div class="preset-thumb" :style="{ background: item.color || '#222' }">
-                    <img v-if="item.url" :src="item.url" :alt="item.name" />
+                  <div class="preset-thumb" :style="{ background: item.gradient || item.color || '#222' }">
+                    <img v-if="item.url && !item.gradient" :src="item.url" :alt="item.name" />
                   </div>
                   <span class="preset-name">{{ item.name }}</span>
                 </div>

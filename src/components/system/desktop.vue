@@ -121,7 +121,10 @@ const bgMode=ref(localStorage.getItem('web-desktop-bg-mode') || 'cover')
 const bgStyle=computed(()=>{
   const mode = bgMode.value
   if (!bg.value) return {}
-  const styles = { backgroundImage: `url(${bg.value})` }
+  const isGradient = bg.value.startsWith('gradient:')
+  const styles = isGradient
+    ? { background: bg.value.substring(9) }
+    : { backgroundImage: `url(${bg.value})` }
   switch (mode) {
     case 'cover':
       styles.backgroundSize = 'cover'
@@ -2028,7 +2031,6 @@ function f(){
 
 
 <style scoped src="./desktop.css"></style>
-
 
 
 
